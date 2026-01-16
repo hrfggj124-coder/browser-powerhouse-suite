@@ -45,6 +45,8 @@
     --tool-compress: 340 82% 52%;
     --tool-convert: 25 95% 53%;
     --tool-audio: 173 80% 40%;
+    --tool-qr: 280 70% 55%;
+    --tool-video: 15 85% 55%;
 
     /* Gradient definitions */
     --gradient-hero: linear-gradient(135deg, hsl(262 83% 58% / 0.2) 0%, hsl(199 89% 48% / 0.2) 50%, hsl(340 82% 52% / 0.2) 100%);

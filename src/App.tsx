@@ -13,6 +13,8 @@ import PDFTools from "./pages/PDFTools";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import AudioExtractor from "./pages/AudioExtractor";
 import AIChat from "./pages/AIChat";
+import VideoCompressor from "./pages/VideoCompressor";
+import QRCodeGenerator from "./pages/QRCodeGenerator";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/resume" element={<ResumeBuilder />} />
           <Route path="/audio" element={<AudioExtractor />} />
           <Route path="/ai-chat" element={<AIChat />} />
+          <Route path="/video-compress" element={<VideoCompressor />} />
+          <Route path="/qr-code" element={<QRCodeGenerator />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
