@@ -9,6 +9,8 @@ import {
   ImageIcon,
   Music,
   Sparkles,
+  Video,
+  QrCode,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
@@ -44,7 +46,7 @@ const tools = [
   },
   {
     title: "AI Chat",
-    description: "Chat with an intelligent AI assistant for help and ideas.",
+    description: "Chat with an intelligent AI assistant powered by Lovable AI.",
     icon: MessageSquare,
     href: "/ai-chat",
     color: "--tool-ai",
@@ -55,6 +57,13 @@ const tools = [
     icon: ImageMinus,
     href: "/compress",
     color: "--tool-compress",
+  },
+  {
+    title: "Video Compressor",
+    description: "Reduce video file sizes directly in your browser.",
+    icon: Video,
+    href: "/video-compress",
+    color: "--tool-video",
   },
   {
     title: "Image Converter",
@@ -69,6 +78,13 @@ const tools = [
     icon: Music,
     href: "/audio",
     color: "--tool-audio",
+  },
+  {
+    title: "QR Code Generator",
+    description: "Create QR codes from URLs, text, emails, WiFi, and more.",
+    icon: QrCode,
+    href: "/qr-code",
+    color: "--tool-qr",
   },
 ];
 

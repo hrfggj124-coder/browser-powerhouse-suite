@@ -70,6 +70,8 @@ export default {
           compress: "hsl(var(--tool-compress))",
           convert: "hsl(var(--tool-convert))",
           audio: "hsl(var(--tool-audio))",
+          qr: "hsl(var(--tool-qr))",
+          video: "hsl(var(--tool-video))",
         },
       },
       borderRadius: {

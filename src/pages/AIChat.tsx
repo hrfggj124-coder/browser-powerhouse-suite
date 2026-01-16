@@ -3,17 +3,21 @@ import { motion } from "framer-motion";
 import { MessageSquare, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+
 const AIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,32 +27,129 @@ const AIChat = () => {
     scrollToBottom();
   }, [messages]);
 
+  const streamChat = async (userMessages: Message[]) => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: userMessages }),
+    });
+
+    if (!resp.ok) {
+      const error = await resp.json().catch(() => ({ error: "Request failed" }));
+      
+      if (resp.status === 429) {
+        throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+      }
+      if (resp.status === 402) {
+        throw new Error("AI usage limit reached. Please add credits to continue.");
+      }
+      throw new Error(error.error || "Failed to get response");
+    }
+
+    if (!resp.body) throw new Error("No response body");
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") break;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return prev.map((m, i) => 
+                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                );
+              }
+              return [...prev, { role: "assistant", content: assistantContent }];
+            });
+          }
+        } catch {
+          // Incomplete JSON, put it back and wait for more data
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    // Final flush
+    if (textBuffer.trim()) {
+      for (let raw of textBuffer.split("\n")) {
+        if (!raw) continue;
+        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+        if (raw.startsWith(":") || raw.trim() === "") continue;
+        if (!raw.startsWith("data: ")) continue;
+        const jsonStr = raw.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return prev.map((m, i) => 
+                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                );
+              }
+              return [...prev, { role: "assistant", content: assistantContent }];
+            });
+          }
+        } catch { /* ignore partial leftovers */ }
+      }
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
-    // Simulated AI response (would connect to Lovable AI in production)
-    setTimeout(() => {
-      const responses = [
-        "I'm a demo AI assistant! In the full version, I'd be powered by advanced language models to help you with any questions.",
-        "That's a great question! I'm here to help. In the production version, I'd provide detailed, helpful responses.",
-        "Thanks for your message! This is a demonstration. The full AI chat would offer intelligent conversations on any topic.",
-        "Hello! I'm simulating an AI response. The complete version would use Lovable AI for real-time, intelligent assistance.",
-        "I understand your query. In the fully integrated version, I'd provide comprehensive answers using cloud-based AI.",
-      ];
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: responses[Math.floor(Math.random() * responses.length)],
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+    try {
+      await streamChat(newMessages);
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send message",
+        variant: "destructive",
+      });
+      // Remove the assistant message if there was an error
+      setMessages(newMessages);
+    } finally {
       setIsLoading(false);
-    }, 1000 + Math.random() * 1000);
+    }
   };
 
   return (
@@ -56,7 +157,7 @@ const AIChat = () => {
       <div className="container mx-auto px-4 py-12">
         <ToolHeader
           title="AI Chat"
-          description="Chat with an intelligent AI assistant"
+          description="Chat with an intelligent AI assistant powered by Lovable AI"
           icon={MessageSquare}
           color="--tool-ai"
         />
@@ -116,7 +217,7 @@ const AIChat = () => {
                             : "bg-secondary"
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">{message.content}</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                       </div>
                       {message.role === "user" && (
                         <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
@@ -125,7 +226,7 @@ const AIChat = () => {
                       )}
                     </motion.div>
                   ))}
-                  {isLoading && (
+                  {isLoading && messages[messages.length - 1]?.role === "user" && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -167,7 +268,7 @@ const AIChat = () => {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground text-center mt-3">
-                Demo mode: Enable Lovable Cloud for real AI responses
+                Powered by Lovable AI
               </p>
             </form>
           </motion.div>
