@@ -11,6 +11,7 @@ import {
   Sparkles,
   Video,
   QrCode,
+  Volume2,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
@@ -85,6 +86,13 @@ const tools = [
     icon: QrCode,
     href: "/qr-code",
     color: "--tool-qr",
+  },
+  {
+    title: "Text to Speech",
+    description: "Convert text to natural-sounding speech with AI voices.",
+    icon: Volume2,
+    href: "/text-to-speech",
+    color: "--tool-tts",
   },
 ];
 
