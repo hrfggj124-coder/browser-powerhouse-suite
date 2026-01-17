@@ -6,6 +6,72 @@
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 98%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 83% 58%;
+
+    --radius: 0.75rem;
+
+    /* Tool-specific colors */
+    --tool-pdf: 0 84% 60%;
+    --tool-password: 142 76% 36%;
+    --tool-resume: 199 89% 48%;
+    --tool-weather: 45 93% 47%;
+    --tool-ai: 262 83% 58%;
+    --tool-compress: 340 82% 52%;
+    --tool-convert: 25 95% 53%;
+    --tool-audio: 173 80% 40%;
+    --tool-qr: 280 70% 55%;
+    --tool-video: 15 85% 55%;
+    --tool-tts: 270 70% 50%;
+    --tool-stt: 200 80% 50%;
+
+    /* Gradient definitions */
+    --gradient-hero: linear-gradient(135deg, hsl(262 83% 58% / 0.1) 0%, hsl(199 89% 48% / 0.1) 50%, hsl(340 82% 52% / 0.1) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(262 83% 58% / 0.08) 0%, transparent 70%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.05);
+    --shadow-glow: 0 0 40px hsl(262 83% 58% / 0.15);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 262 83% 58%;
+  }
+
+  .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
@@ -34,8 +100,6 @@
     --input: 217 33% 17%;
     --ring: 262 83% 58%;
 
-    --radius: 0.75rem;
-
     /* Tool-specific colors */
     --tool-pdf: 0 84% 60%;
     --tool-password: 142 76% 36%;
@@ -48,6 +112,7 @@
     --tool-qr: 280 70% 55%;
     --tool-video: 15 85% 55%;
     --tool-tts: 270 70% 50%;
+    --tool-stt: 200 80% 50%;
 
     /* Gradient definitions */
     --gradient-hero: linear-gradient(135deg, hsl(262 83% 58% / 0.2) 0%, hsl(199 89% 48% / 0.2) 50%, hsl(340 82% 52% / 0.2) 100%);

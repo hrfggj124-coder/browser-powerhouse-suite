@@ -73,6 +73,7 @@ export default {
           qr: "hsl(var(--tool-qr))",
           video: "hsl(var(--tool-video))",
           tts: "hsl(var(--tool-tts))",
+          stt: "hsl(var(--tool-stt))",
         },
       },
       borderRadius: {
