@@ -15,6 +15,7 @@ import AudioExtractor from "./pages/AudioExtractor";
 import AIChat from "./pages/AIChat";
 import VideoCompressor from "./pages/VideoCompressor";
 import QRCodeGenerator from "./pages/QRCodeGenerator";
+import TextToSpeech from "./pages/TextToSpeech";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/ai-chat" element={<AIChat />} />
           <Route path="/video-compress" element={<VideoCompressor />} />
           <Route path="/qr-code" element={<QRCodeGenerator />} />
+          <Route path="/text-to-speech" element={<TextToSpeech />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
