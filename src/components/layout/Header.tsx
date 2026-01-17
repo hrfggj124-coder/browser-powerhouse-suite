@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Header = () => {
   const location = useLocation();
@@ -19,24 +20,29 @@ const Header = () => {
             <span className="font-semibold text-lg">ToolBox</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/" label="Home" active={isHome} />
-            <NavItem to="/pdf-tools" label="PDF" />
-            <NavItem to="/password" label="Password" />
-            <NavItem to="/resume" label="Resume" />
-            <NavItem to="/weather" label="Weather" />
-            <NavItem to="/ai-chat" label="AI Chat" />
-            <NavItem to="/compress" label="Compress" />
-            <NavItem to="/convert" label="Convert" />
-            <NavItem to="/audio" label="Audio" />
-          </nav>
+          <div className="hidden md:flex items-center gap-1">
+            <nav className="flex items-center gap-1">
+              <NavItem to="/" label="Home" active={isHome} />
+              <NavItem to="/pdf-tools" label="PDF" />
+              <NavItem to="/password" label="Password" />
+              <NavItem to="/ai-chat" label="AI Chat" />
+              <NavItem to="/text-to-speech" label="TTS" />
+              <NavItem to="/speech-to-text" label="STT" />
+            </nav>
+            <div className="ml-2 border-l border-border pl-2">
+              <ThemeToggle />
+            </div>
+          </div>
 
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -55,9 +61,13 @@ const Header = () => {
             <MobileNavItem to="/resume" label="Resume Builder" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/weather" label="Weather" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/ai-chat" label="AI Chat" onClick={() => setMobileMenuOpen(false)} />
-            <MobileNavItem to="/compress" label="Compress" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/text-to-speech" label="Text to Speech" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/speech-to-text" label="Speech to Text" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/compress" label="Image Compress" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/video-compress" label="Video Compress" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/convert" label="Convert" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/audio" label="Audio Extractor" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/qr-code" label="QR Code" onClick={() => setMobileMenuOpen(false)} />
           </nav>
         </motion.div>
       )}

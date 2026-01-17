@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PasswordGenerator from "./pages/PasswordGenerator";
@@ -16,32 +17,36 @@ import AIChat from "./pages/AIChat";
 import VideoCompressor from "./pages/VideoCompressor";
 import QRCodeGenerator from "./pages/QRCodeGenerator";
 import TextToSpeech from "./pages/TextToSpeech";
+import SpeechToText from "./pages/SpeechToText";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/password" element={<PasswordGenerator />} />
-          <Route path="/compress" element={<ImageCompressor />} />
-          <Route path="/convert" element={<ImageConverter />} />
-          <Route path="/weather" element={<Weather />} />
-          <Route path="/pdf-tools" element={<PDFTools />} />
-          <Route path="/resume" element={<ResumeBuilder />} />
-          <Route path="/audio" element={<AudioExtractor />} />
-          <Route path="/ai-chat" element={<AIChat />} />
-          <Route path="/video-compress" element={<VideoCompressor />} />
-          <Route path="/qr-code" element={<QRCodeGenerator />} />
-          <Route path="/text-to-speech" element={<TextToSpeech />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/password" element={<PasswordGenerator />} />
+            <Route path="/compress" element={<ImageCompressor />} />
+            <Route path="/convert" element={<ImageConverter />} />
+            <Route path="/weather" element={<Weather />} />
+            <Route path="/pdf-tools" element={<PDFTools />} />
+            <Route path="/resume" element={<ResumeBuilder />} />
+            <Route path="/audio" element={<AudioExtractor />} />
+            <Route path="/ai-chat" element={<AIChat />} />
+            <Route path="/video-compress" element={<VideoCompressor />} />
+            <Route path="/qr-code" element={<QRCodeGenerator />} />
+            <Route path="/text-to-speech" element={<TextToSpeech />} />
+            <Route path="/speech-to-text" element={<SpeechToText />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

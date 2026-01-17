@@ -12,6 +12,7 @@ import {
   Video,
   QrCode,
   Volume2,
+  FileAudio,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
@@ -93,6 +94,13 @@ const tools = [
     icon: Volume2,
     href: "/text-to-speech",
     color: "--tool-tts",
+  },
+  {
+    title: "Speech to Text",
+    description: "Transcribe audio files or microphone input locally.",
+    icon: FileAudio,
+    href: "/speech-to-text",
+    color: "--tool-stt",
   },
 ];
 
