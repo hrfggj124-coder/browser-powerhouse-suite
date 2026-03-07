@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Upload, Download, Mic } from "lucide-react";
+import { Users, Play, Pause, Upload, Download, Mic, Square, Circle } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -36,6 +36,43 @@ const PodcastAvatar = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([null, null]);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      recordedChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], "recording.webm", { type: "audio/webm" });
+        setAudioFile(file);
+        stream.getTracks().forEach((t) => t.stop());
+        toast.success("Recording saved! Press Play & Animate to preview.");
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.success("Recording started...");
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const updateActor = (index: number, updates: Partial<Actor>) => {
     setActors((prev) => prev.map((a, i) => (i === index ? { ...a, ...updates } : a)));
@@ -347,11 +384,29 @@ const PodcastAvatar = () => {
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Mic className="w-5 h-5 text-primary" /> Podcast Audio
             </h3>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={isRecording ? stopRecording : startRecording}
+                variant={isRecording ? "destructive" : "outline"}
+                className="flex items-center gap-2"
+              >
+                {isRecording ? (
+                  <><Square className="w-4 h-4" /> Stop Recording</>
+                ) : (
+                  <><Circle className="w-4 h-4 text-destructive" /> Record Audio</>
+                )}
+              </Button>
+              {isRecording && (
+                <span className="flex items-center gap-2 text-sm text-destructive animate-pulse">
+                  <Circle className="w-3 h-3 fill-current" /> Recording...
+                </span>
+              )}
+            </div>
             <FileUploadZone
               accept="audio/*"
               maxSize={50}
               onFilesSelected={handleAudioSelected}
-              label="Upload podcast audio"
+              label="Or upload podcast audio"
               description="MP3, WAV, M4A up to 50MB"
             />
             {audioFile && (
