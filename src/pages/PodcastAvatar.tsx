@@ -384,11 +384,29 @@ const PodcastAvatar = () => {
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Mic className="w-5 h-5 text-primary" /> Podcast Audio
             </h3>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={isRecording ? stopRecording : startRecording}
+                variant={isRecording ? "destructive" : "outline"}
+                className="flex items-center gap-2"
+              >
+                {isRecording ? (
+                  <><Square className="w-4 h-4" /> Stop Recording</>
+                ) : (
+                  <><Circle className="w-4 h-4 text-destructive" /> Record Audio</>
+                )}
+              </Button>
+              {isRecording && (
+                <span className="flex items-center gap-2 text-sm text-destructive animate-pulse">
+                  <Circle className="w-3 h-3 fill-current" /> Recording...
+                </span>
+              )}
+            </div>
             <FileUploadZone
               accept="audio/*"
               maxSize={50}
               onFilesSelected={handleAudioSelected}
-              label="Upload podcast audio"
+              label="Or upload podcast audio"
               description="MP3, WAV, M4A up to 50MB"
             />
             {audioFile && (
