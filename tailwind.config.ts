@@ -74,6 +74,9 @@ export default {
           video: "hsl(var(--tool-video))",
           tts: "hsl(var(--tool-tts))",
           stt: "hsl(var(--tool-stt))",
+          markdown: "hsl(var(--tool-markdown))",
+          json: "hsl(var(--tool-json))",
+          podcast: "hsl(var(--tool-podcast))",
         },
       },
       borderRadius: {

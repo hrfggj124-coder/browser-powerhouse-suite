@@ -65,7 +65,7 @@ const JSONFormatter = () => {
           title="JSON Formatter"
           description="Format, validate, and minify JSON data. All processing happens locally."
           icon={Braces}
-          iconColor="hsl(var(--tool-json))"
+          color="--tool-json"
         />
 
         <motion.div

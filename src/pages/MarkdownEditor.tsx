@@ -87,7 +87,7 @@ const MarkdownEditor = () => {
           title="Markdown Editor"
           description="Write Markdown with a live preview. All processing happens locally."
           icon={Edit3}
-          iconColor="hsl(var(--tool-markdown))"
+          color="--tool-markdown"
         />
 
         <motion.div

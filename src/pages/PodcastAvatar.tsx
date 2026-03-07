@@ -256,7 +256,7 @@ const PodcastAvatar = () => {
           title="Podcast Avatar"
           description="Create animated talking avatars for podcasts. Upload audio and images, select actor types, and watch them lip-sync."
           icon={Users}
-          iconColor="hsl(var(--tool-podcast))"
+          color="--tool-podcast"
         />
 
         <motion.div
