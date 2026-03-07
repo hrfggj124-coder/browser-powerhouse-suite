@@ -36,6 +36,43 @@ const PodcastAvatar = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([null, null]);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      recordedChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], "recording.webm", { type: "audio/webm" });
+        setAudioFile(file);
+        stream.getTracks().forEach((t) => t.stop());
+        toast.success("Recording saved! Press Play & Animate to preview.");
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.success("Recording started...");
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const updateActor = (index: number, updates: Partial<Actor>) => {
     setActors((prev) => prev.map((a, i) => (i === index ? { ...a, ...updates } : a)));
