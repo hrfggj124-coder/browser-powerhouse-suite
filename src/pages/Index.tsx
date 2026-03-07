@@ -13,6 +13,9 @@ import {
   QrCode,
   Volume2,
   FileAudio,
+  Edit3,
+  Braces,
+  Users,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
@@ -101,6 +104,27 @@ const tools = [
     icon: FileAudio,
     href: "/speech-to-text",
     color: "--tool-stt",
+  },
+  {
+    title: "Markdown Editor",
+    description: "Write and preview Markdown with live rendering.",
+    icon: Edit3,
+    href: "/markdown",
+    color: "--tool-markdown",
+  },
+  {
+    title: "JSON Formatter",
+    description: "Format, validate, and minify JSON data instantly.",
+    icon: Braces,
+    href: "/json",
+    color: "--tool-json",
+  },
+  {
+    title: "Podcast Avatar",
+    description: "Animated lip-sync avatars for podcast audio.",
+    icon: Users,
+    href: "/podcast",
+    color: "--tool-podcast",
   },
 ];
 

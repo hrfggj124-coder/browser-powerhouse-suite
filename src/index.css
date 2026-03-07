@@ -49,6 +49,9 @@
     --tool-video: 15 85% 55%;
     --tool-tts: 270 70% 50%;
     --tool-stt: 200 80% 50%;
+    --tool-markdown: 160 60% 45%;
+    --tool-json: 50 90% 50%;
+    --tool-podcast: 320 70% 55%;
 
     /* Gradient definitions */
     --gradient-hero: linear-gradient(135deg, hsl(262 83% 58% / 0.1) 0%, hsl(199 89% 48% / 0.1) 50%, hsl(340 82% 52% / 0.1) 100%);
@@ -113,6 +116,9 @@
     --tool-video: 15 85% 55%;
     --tool-tts: 270 70% 50%;
     --tool-stt: 200 80% 50%;
+    --tool-markdown: 160 60% 45%;
+    --tool-json: 50 90% 50%;
+    --tool-podcast: 320 70% 55%;
 
     /* Gradient definitions */
     --gradient-hero: linear-gradient(135deg, hsl(262 83% 58% / 0.2) 0%, hsl(199 89% 48% / 0.2) 50%, hsl(340 82% 52% / 0.2) 100%);

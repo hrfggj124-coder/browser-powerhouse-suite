@@ -18,6 +18,9 @@ import VideoCompressor from "./pages/VideoCompressor";
 import QRCodeGenerator from "./pages/QRCodeGenerator";
 import TextToSpeech from "./pages/TextToSpeech";
 import SpeechToText from "./pages/SpeechToText";
+import MarkdownEditor from "./pages/MarkdownEditor";
+import JSONFormatter from "./pages/JSONFormatter";
+import PodcastAvatar from "./pages/PodcastAvatar";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +45,9 @@ const App = () => (
             <Route path="/qr-code" element={<QRCodeGenerator />} />
             <Route path="/text-to-speech" element={<TextToSpeech />} />
             <Route path="/speech-to-text" element={<SpeechToText />} />
+            <Route path="/markdown" element={<MarkdownEditor />} />
+            <Route path="/json" element={<JSONFormatter />} />
+            <Route path="/podcast" element={<PodcastAvatar />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
