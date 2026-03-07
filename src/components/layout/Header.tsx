@@ -68,6 +68,9 @@ const Header = () => {
             <MobileNavItem to="/convert" label="Convert" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/audio" label="Audio Extractor" onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem to="/qr-code" label="QR Code" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/markdown" label="Markdown Editor" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/json" label="JSON Formatter" onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem to="/podcast" label="Podcast Avatar" onClick={() => setMobileMenuOpen(false)} />
           </nav>
         </motion.div>
       )}
