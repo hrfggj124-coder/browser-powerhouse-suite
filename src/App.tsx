@@ -21,6 +21,8 @@ import SpeechToText from "./pages/SpeechToText";
 import MarkdownEditor from "./pages/MarkdownEditor";
 import JSONFormatter from "./pages/JSONFormatter";
 import PodcastAvatar from "./pages/PodcastAvatar";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
