@@ -232,6 +232,8 @@ const PodcastAvatar = () => {
       }
 
       source.start();
+      playStartTimeRef.current = Date.now();
+      setCurrentTime(0);
       setIsPlaying(true);
       animate();
 
