@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Copy, Download, Eye, Edit3, Columns } from "lucide-react";
+import { Copy, Download, Eye, Edit3, Columns, Sun, Moon } from "lucide-react";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
@@ -65,6 +65,7 @@ marked.use({ renderer });
 const MarkdownEditor = () => {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const [previewDark, setPreviewDark] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const htmlContent = useMemo(() => {
@@ -153,6 +154,15 @@ const MarkdownEditor = () => {
               </Button>
             </div>
             <div className="flex-1" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPreviewDark(!previewDark)}
+              title={previewDark ? "Switch to light preview" : "Switch to dark preview"}
+            >
+              {previewDark ? <Sun className="w-4 h-4 mr-1" /> : <Moon className="w-4 h-4 mr-1" />}
+              {previewDark ? "Light" : "Dark"}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleCopy}>
               <Copy className="w-4 h-4 mr-1" /> Copy MD
             </Button>
@@ -184,7 +194,11 @@ const MarkdownEditor = () => {
             {viewMode !== "edit" && (
               <div
                 ref={previewRef}
-                className="prose prose-sm dark:prose-invert max-w-none p-6 rounded-xl bg-secondary/30 border border-border/50 overflow-auto"
+                className={`prose prose-sm max-w-none p-6 rounded-xl border overflow-auto transition-colors ${
+                  previewDark
+                    ? "prose-invert bg-secondary/30 border-border/50"
+                    : "bg-white text-gray-900 border-gray-200"
+                }`}
                 style={{ minHeight: "70vh" }}
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />

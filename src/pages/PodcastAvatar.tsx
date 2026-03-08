@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -31,7 +31,7 @@ const PodcastAvatar = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
-  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([null, null]);
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -41,6 +41,39 @@ const PodcastAvatar = () => {
 
   const updateActor = (index: number, updates: Partial<Actor>) => {
     setActors((prev) => prev.map((a, i) => (i === index ? { ...a, ...updates } : a)));
+  };
+
+  const addActor = () => {
+    if (actors.length >= 6) {
+      toast.error("Maximum 6 actors allowed");
+      return;
+    }
+    const id = String(Date.now());
+    const colors = [
+      "hsl(var(--primary))", "hsl(var(--tool-compress))", "hsl(var(--tool-resume))",
+      "hsl(var(--tool-password))", "hsl(var(--tool-convert))", "hsl(var(--tool-weather))",
+    ];
+    setActors((prev) => [
+      ...prev,
+      {
+        id,
+        name: `Actor ${prev.length + 1}`,
+        sex: prev.length % 2 === 0 ? "male" : "female",
+        age: "adult",
+        color: colors[prev.length % colors.length],
+        image: null,
+        imageUrl: null,
+        speechBubble: "",
+      },
+    ]);
+  };
+
+  const removeActor = (index: number) => {
+    if (actors.length <= 1) {
+      toast.error("Need at least 1 actor");
+      return;
+    }
+    setActors((prev) => prev.filter((_, i) => i !== index));
   };
 
   const startRecording = async () => {
@@ -413,9 +446,27 @@ const PodcastAvatar = () => {
           className="space-y-6"
         >
           {/* Actor Configuration */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Actors ({actors.length}/6)</h3>
+            <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
+              <Plus className="w-4 h-4 mr-1" /> Add Actor
+            </Button>
+          </div>
+          <div className={`grid gap-6 ${actors.length <= 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
             {actors.map((actor, index) => (
-              <ActorConfig key={actor.id} actor={actor} index={index} onUpdate={updateActor} />
+              <div key={actor.id} className="relative">
+                {actors.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeActor(index)}
+                    className="absolute top-2 right-2 z-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+                <ActorConfig actor={actor} index={index} onUpdate={updateActor} />
+              </div>
             ))}
           </div>
 
@@ -545,13 +596,13 @@ const PodcastAvatar = () => {
               className="rounded-2xl p-8 flex flex-col items-center justify-center gap-4"
               style={{ background: scene.gradient, minHeight: 340 }}
             >
-              <div className="flex items-center justify-center gap-8 md:gap-16">
+              <div className={`flex items-center justify-center flex-wrap ${actors.length <= 3 ? "gap-8 md:gap-16" : "gap-4 md:gap-8"}`}>
                 {actors.map((actor, i) => (
                   <div key={actor.id} className="flex flex-col items-center">
                     <canvas
                       ref={(el) => { canvasRefs.current[i] = el; }}
-                      width={AVATAR_SIZE}
-                      height={AVATAR_SIZE + 40}
+                      width={actors.length <= 3 ? AVATAR_SIZE : Math.max(120, AVATAR_SIZE - (actors.length - 3) * 20)}
+                      height={(actors.length <= 3 ? AVATAR_SIZE : Math.max(120, AVATAR_SIZE - (actors.length - 3) * 20)) + 40}
                       className="rounded-xl"
                     />
                   </div>
