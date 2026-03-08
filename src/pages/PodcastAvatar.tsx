@@ -808,6 +808,11 @@ const PodcastAvatar = () => {
             <p className="text-xs text-muted-foreground text-center">
               All processing happens locally — your files never leave your device.
             </p>
+            <div className="flex flex-wrap gap-3 justify-center text-xs text-muted-foreground">
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>Space</kbd> Play/Pause</span>
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>R</kbd> Record</span>
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>Ctrl+E</kbd> Export Video</span>
+            </div>
           </div>
         </motion.div>
       </div>
