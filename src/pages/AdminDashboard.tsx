@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Shield, LogOut, Save, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import AdAnalytics from "@/components/ads/AdAnalytics";
 
 interface AdPlacement {
   id: string;
@@ -225,6 +226,8 @@ const AdminDashboard = () => {
             {creating ? "Creating..." : "Add Slot"}
           </Button>
         </div>
+
+        <AdAnalytics />
 
         <div className="space-y-6">
           {ads.map((ad) => (
