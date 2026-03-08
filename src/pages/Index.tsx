@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
+import AdSlot from "@/components/ads/AdSlot";
 
 const tools = [
   {
