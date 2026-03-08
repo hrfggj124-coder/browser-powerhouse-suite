@@ -208,10 +208,13 @@ const TimelineEditor = ({
         {/* Playback cursor - shown always when there's a currentTime */}
         {(isPlaying || currentTime > 0) && (
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-white z-10 pointer-events-none"
+            className="absolute top-0 bottom-0 w-1 bg-white z-10 pointer-events-none shadow-[0_0_6px_rgba(255,255,255,0.8)]"
             style={{ left: `${(currentTime / duration) * 100}%` }}
           >
-            <div className="w-2 h-2 bg-white rounded-full -ml-[3px] -mt-0.5" />
+            <div className="w-3 h-3 bg-white rounded-full -ml-[5px] -mt-1 shadow-md" />
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-background/90 text-foreground px-1 rounded whitespace-nowrap">
+              {formatTime(currentTime)}
+            </div>
           </div>
         )}
       </div>
