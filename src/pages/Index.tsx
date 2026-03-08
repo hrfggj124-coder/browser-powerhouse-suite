@@ -131,7 +131,46 @@ const tools = [
   },
 ];
 
+const BETWEEN_TOOLS_INTERVAL = 4; // insert an ad every N cards
+
 const Index = () => {
+  const [betweenAds, setBetweenAds] = useState<{ slot_name: string; html_content: string }[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase
+        .from("ad_placements")
+        .select("slot_name, html_content, placement, position")
+        .eq("is_active", true);
+      if (data) {
+        const filtered = data.filter(
+          (a) =>
+            a.html_content.trim() &&
+            (a.position === "between_tools") &&
+            (a.placement === "all_pages" || a.placement === "homepage")
+        );
+        setBetweenAds(filtered);
+      }
+    };
+    fetch();
+  }, []);
+
+  // Build grid items: tool cards interleaved with ads
+  const gridItems: { type: "tool"; tool: (typeof tools)[number]; index: number }[] | { type: "ad"; html: string; key: string }[] = [];
+  let adIndex = 0;
+  tools.forEach((tool, i) => {
+    (gridItems as any[]).push({ type: "tool", tool, index: i });
+    if (
+      betweenAds.length > 0 &&
+      (i + 1) % BETWEEN_TOOLS_INTERVAL === 0 &&
+      i < tools.length - 1
+    ) {
+      const ad = betweenAds[adIndex % betweenAds.length];
+      (gridItems as any[]).push({ type: "ad", html: ad.html_content, key: `ad-${i}-${ad.slot_name}` });
+      adIndex++;
+    }
+  });
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -190,13 +229,21 @@ const Index = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tools.map((tool, index) => (
-            <ToolCard
-              key={tool.href}
-              {...tool}
-              delay={index * 0.05}
-            />
-          ))}
+          {gridItems.map((item: any) =>
+            item.type === "tool" ? (
+              <ToolCard
+                key={item.tool.href}
+                {...item.tool}
+                delay={item.index * 0.05}
+              />
+            ) : (
+              <div
+                key={item.key}
+                className="col-span-1 md:col-span-2 lg:col-span-4 ad-slot"
+                dangerouslySetInnerHTML={{ __html: item.html }}
+              />
+            )
+          )}
         </div>
         <AdSlot slotName="between_tools" className="mt-8" />
       </section>
