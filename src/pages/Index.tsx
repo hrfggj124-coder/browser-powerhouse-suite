@@ -20,6 +20,8 @@ import { motion } from "framer-motion";
 import Layout from "@/components/layout/Layout";
 import ToolCard from "@/components/shared/ToolCard";
 import AdSlot from "@/components/ads/AdSlot";
+import { CustomAdSlots } from "@/components/ads/AdSlot";
+import { supabase } from "@/integrations/supabase/client";
 
 const tools = [
   {
