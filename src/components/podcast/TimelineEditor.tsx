@@ -32,6 +32,7 @@ const TimelineEditor = ({
   audioDuration,
   currentTime,
   isPlaying,
+  waveformPeaks = [],
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
