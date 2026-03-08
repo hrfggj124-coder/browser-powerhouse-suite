@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2, GripVertical } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -465,6 +465,62 @@ const PodcastAvatar = () => {
     toast.success(`Applied "${preset.name}" to Actor ${targetIndex + 1}`);
   };
 
+  // Export project as JSON
+  const exportProject = () => {
+    const project = {
+      version: 1,
+      actors: actors.map(({ image, imageUrl, ...rest }) => rest),
+      timelineSegments,
+      selectedScene,
+      musicVolume,
+      showWaveform,
+      audioDuration,
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "podcast-project.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Project exported");
+  };
+
+  // Import project from JSON
+  const importProject = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const project = JSON.parse(text);
+        if (!project.version || !project.actors) {
+          toast.error("Invalid project file");
+          return;
+        }
+        setActors(
+          project.actors.map((a: any) => ({
+            ...a,
+            image: null,
+            imageUrl: null,
+          }))
+        );
+        if (project.timelineSegments) setTimelineSegments(project.timelineSegments);
+        if (project.selectedScene) setSelectedScene(project.selectedScene);
+        if (project.musicVolume !== undefined) setMusicVolume(project.musicVolume);
+        if (project.showWaveform !== undefined) setShowWaveform(project.showWaveform);
+        if (project.audioDuration) setAudioDuration(project.audioDuration);
+        toast.success("Project imported! Re-upload audio/music files to continue.");
+      } catch {
+        toast.error("Failed to parse project file");
+      }
+    };
+    input.click();
+  };
+
   // Initial draw
   useEffect(() => {
     canvasRefs.current.forEach((canvas, i) => {
@@ -488,11 +544,19 @@ const PodcastAvatar = () => {
           className="space-y-6"
         >
           {/* Actor Configuration */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold text-lg">Actors ({actors.length}/6)</h3>
-            <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
-              <Plus className="w-4 h-4 mr-1" /> Add Actor
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={importProject}>
+                <FolderOpen className="w-4 h-4 mr-1" /> Import Project
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportProject}>
+                <Save className="w-4 h-4 mr-1" /> Export Project
+              </Button>
+              <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
+                <Plus className="w-4 h-4 mr-1" /> Add Actor
+              </Button>
+            </div>
           </div>
           <div className={`grid gap-6 ${actors.length <= 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
             {actors.map((actor, index) => (
