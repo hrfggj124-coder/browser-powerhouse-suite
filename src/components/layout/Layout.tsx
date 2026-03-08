@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import AdSlot, { CustomAdSlots } from "@/components/ads/AdSlot";
 
@@ -7,14 +8,36 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  const location = useLocation();
+  const currentRoute = location.pathname;
+  const isHomepage = currentRoute === "/";
+  const placement = isHomepage ? "homepage" : "tool_pages";
+
   return (
     <div className="min-h-screen bg-background bg-hero-pattern">
       <Header />
       <main className="pt-16">
         <AdSlot slotName="header_banner" className="container mx-auto px-4 pt-4" />
+        <CustomAdSlots
+          placement={placement}
+          currentRoute={currentRoute}
+          position="header"
+          className="container mx-auto px-4 pt-2"
+        />
         {children}
-        <CustomAdSlots className="container mx-auto px-4 py-4 space-y-4" />
+        <CustomAdSlots
+          placement={placement}
+          currentRoute={currentRoute}
+          position="after_content"
+          className="container mx-auto px-4 py-4 space-y-4"
+        />
       </main>
+      <CustomAdSlots
+        placement={placement}
+        currentRoute={currentRoute}
+        position="footer"
+        className="container mx-auto px-4 pb-4 space-y-4"
+      />
       <AdSlot slotName="footer_banner" className="container mx-auto px-4 pb-4" />
       <footer className="border-t border-border/50 mt-20">
         <div className="container mx-auto px-4 py-8">

@@ -38,21 +38,54 @@ export default AdSlot;
 
 const DEFAULT_SLOTS = ["header_banner", "between_tools", "footer_banner"];
 
-export const CustomAdSlots = ({ className = "" }: { className?: string }) => {
-  const [ads, setAds] = useState<{ slot_name: string; html_content: string }[]>([]);
+type PlacementFilter = "all_pages" | "homepage" | "tool_pages" | string;
+type PositionFilter = "header" | "after_content" | "sidebar" | "between_tools" | "footer";
+
+interface CustomAdSlotsProps {
+  className?: string;
+  placement?: PlacementFilter;
+  position?: PositionFilter;
+  currentRoute?: string;
+}
+
+export const CustomAdSlots = ({
+  className = "",
+  placement,
+  position,
+  currentRoute,
+}: CustomAdSlotsProps) => {
+  const [ads, setAds] = useState<
+    { slot_name: string; html_content: string; placement: string; position: string }[]
+  >([]);
 
   useEffect(() => {
     const fetchCustomAds = async () => {
       const { data } = await supabase
         .from("ad_placements")
-        .select("slot_name, html_content")
+        .select("slot_name, html_content, placement, position")
         .eq("is_active", true);
       if (data) {
-        setAds(data.filter((a) => !DEFAULT_SLOTS.includes(a.slot_name) && a.html_content.trim()));
+        let filtered = data.filter(
+          (a) => !DEFAULT_SLOTS.includes(a.slot_name) && a.html_content.trim()
+        );
+
+        filtered = filtered.filter((a) => {
+          const p = a.placement || "all_pages";
+          if (p === "all_pages") return true;
+          if (placement && p === placement) return true;
+          if (currentRoute && p === currentRoute) return true;
+          return false;
+        });
+
+        if (position) {
+          filtered = filtered.filter((a) => (a.position || "after_content") === position);
+        }
+
+        setAds(filtered);
       }
     };
     fetchCustomAds();
-  }, []);
+  }, [placement, position, currentRoute]);
 
   if (!ads.length) return null;
 

@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Shield, LogOut, Save, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 
@@ -14,6 +21,8 @@ interface AdPlacement {
   slot_name: string;
   html_content: string;
   is_active: boolean;
+  placement: string;
+  position: string;
 }
 
 const slotLabels: Record<string, string> = {
@@ -21,6 +30,35 @@ const slotLabels: Record<string, string> = {
   between_tools: "Between Tool Cards (homepage grid)",
   footer_banner: "Footer Banner (above footer)",
 };
+
+const placementOptions = [
+  { value: "all_pages", label: "All Pages" },
+  { value: "homepage", label: "Homepage Only" },
+  { value: "tool_pages", label: "Tool Pages Only" },
+  { value: "/pdf-tools", label: "PDF Tools" },
+  { value: "/password", label: "Password Generator" },
+  { value: "/compress", label: "Image Compressor" },
+  { value: "/convert", label: "Image Converter" },
+  { value: "/weather", label: "Weather" },
+  { value: "/resume", label: "Resume Builder" },
+  { value: "/audio", label: "Audio Extractor" },
+  { value: "/ai-chat", label: "AI Chat" },
+  { value: "/video-compress", label: "Video Compressor" },
+  { value: "/qr-code", label: "QR Code Generator" },
+  { value: "/text-to-speech", label: "Text to Speech" },
+  { value: "/speech-to-text", label: "Speech to Text" },
+  { value: "/markdown", label: "Markdown Editor" },
+  { value: "/json", label: "JSON Formatter" },
+  { value: "/podcast", label: "Podcast Avatar" },
+];
+
+const positionOptions = [
+  { value: "header", label: "Top of Page (below nav)" },
+  { value: "after_content", label: "After Main Content" },
+  { value: "between_tools", label: "Between Tool Cards" },
+  { value: "sidebar", label: "Sidebar Area" },
+  { value: "footer", label: "Footer Area" },
+];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -34,7 +72,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         navigate("/admin-login");
         return;
@@ -77,6 +117,8 @@ const AdminDashboard = () => {
       .update({
         html_content: ad.html_content,
         is_active: ad.is_active,
+        placement: ad.placement,
+        position: ad.position,
         updated_at: new Date().toISOString(),
       })
       .eq("id", ad.id);
@@ -89,7 +131,11 @@ const AdminDashboard = () => {
   };
 
   const handleCreate = async () => {
-    const slug = newSlotName.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    const slug = newSlotName
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
     if (!slug) {
       toast.error("Please enter a valid slot name");
       return;
@@ -194,9 +240,7 @@ const AdminDashboard = () => {
                     </span>
                     <Switch
                       checked={ad.is_active}
-                      onCheckedChange={(checked) =>
-                        updateAd(ad.id, { is_active: checked })
-                      }
+                      onCheckedChange={(checked) => updateAd(ad.id, { is_active: checked })}
                     />
                   </div>
                   {!slotLabels[ad.slot_name] && (
@@ -211,20 +255,61 @@ const AdminDashboard = () => {
                   )}
                 </div>
               </div>
+
+              {/* Placement & Position selectors for custom slots */}
+              {!slotLabels[ad.slot_name] && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Show On
+                    </label>
+                    <Select
+                      value={ad.placement || "all_pages"}
+                      onValueChange={(val) => updateAd(ad.id, { placement: val })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {placementOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Position
+                    </label>
+                    <Select
+                      value={ad.position || "after_content"}
+                      onValueChange={(val) => updateAd(ad.id, { position: val })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {positionOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               <Textarea
                 value={ad.html_content}
-                onChange={(e) =>
-                  updateAd(ad.id, { html_content: e.target.value })
-                }
+                onChange={(e) => updateAd(ad.id, { html_content: e.target.value })}
                 placeholder="Paste your ad HTML code here..."
                 className="font-mono text-xs min-h-[120px]"
               />
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => handleSave(ad)}
-                  disabled={saving === ad.id}
-                  size="sm"
-                >
+                <Button onClick={() => handleSave(ad)} disabled={saving === ad.id} size="sm">
                   <Save className="w-4 h-4 mr-1" />
                   {saving === ad.id ? "Saving..." : "Save"}
                 </Button>
@@ -235,9 +320,13 @@ const AdminDashboard = () => {
                   disabled={!ad.html_content.trim()}
                 >
                   {previewing[ad.id] ? (
-                    <><EyeOff className="w-4 h-4 mr-1" /> Hide Preview</>
+                    <>
+                      <EyeOff className="w-4 h-4 mr-1" /> Hide Preview
+                    </>
                   ) : (
-                    <><Eye className="w-4 h-4 mr-1" /> Preview</>
+                    <>
+                      <Eye className="w-4 h-4 mr-1" /> Preview
+                    </>
                   )}
                 </Button>
               </div>
