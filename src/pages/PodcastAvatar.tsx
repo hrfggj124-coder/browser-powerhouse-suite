@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import ActorConfig from "@/components/podcast/ActorConfig";
 import AudioWaveform from "@/components/podcast/AudioWaveform";
+import TimelineEditor from "@/components/podcast/TimelineEditor";
+import ActorPresets from "@/components/podcast/ActorPresets";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
 import {
-  Actor, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
+  Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
 const PodcastAvatar = () => {
