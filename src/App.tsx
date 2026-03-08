@@ -21,6 +21,8 @@ import SpeechToText from "./pages/SpeechToText";
 import MarkdownEditor from "./pages/MarkdownEditor";
 import JSONFormatter from "./pages/JSONFormatter";
 import PodcastAvatar from "./pages/PodcastAvatar";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/markdown" element={<MarkdownEditor />} />
             <Route path="/json" element={<JSONFormatter />} />
             <Route path="/podcast" element={<PodcastAvatar />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
