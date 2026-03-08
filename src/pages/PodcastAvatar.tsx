@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2 } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2, GripVertical } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -27,7 +27,8 @@ const PodcastAvatar = () => {
   const [showWaveform, setShowWaveform] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
@@ -454,7 +455,43 @@ const PodcastAvatar = () => {
           </div>
           <div className={`grid gap-6 ${actors.length <= 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
             {actors.map((actor, index) => (
-              <div key={actor.id} className="relative">
+              <div
+                key={actor.id}
+                className={`relative transition-all ${
+                  dragIndex === index ? "opacity-50 scale-95" : ""
+                } ${dragOverIndex === index ? "ring-2 ring-primary rounded-xl" : ""}`}
+                draggable
+                onDragStart={(e) => {
+                  setDragIndex(index);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverIndex(index);
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null && dragIndex !== index) {
+                    setActors((prev) => {
+                      const updated = [...prev];
+                      const [moved] = updated.splice(dragIndex, 1);
+                      updated.splice(index, 0, moved);
+                      return updated;
+                    });
+                  }
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+              >
+                <div className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+                  <GripVertical className="w-4 h-4" />
+                </div>
                 {actors.length > 1 && (
                   <Button
                     variant="ghost"
