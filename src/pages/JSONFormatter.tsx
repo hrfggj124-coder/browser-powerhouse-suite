@@ -1,19 +1,50 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Braces, Copy, Check, AlertTriangle, Minimize2, Maximize2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const sampleJson = `{"name":"ToolBox","version":"1.0","tools":["PDF","Password","Resume","Weather","AI Chat"],"config":{"theme":"dark","language":"en"}}`;
+
+// Simple JSON syntax highlighter
+const highlightJson = (json: string): string => {
+  return json
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      (match) => {
+        let cls = "text-amber-400"; // number
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = "text-sky-400"; // key
+          } else {
+            cls = "text-emerald-400"; // string
+          }
+        } else if (/true|false/.test(match)) {
+          cls = "text-violet-400"; // boolean
+        } else if (/null/.test(match)) {
+          cls = "text-red-400"; // null
+        }
+        return `<span class="${cls}">${match}</span>`;
+      }
+    );
+};
 
 const JSONFormatter = () => {
   const [input, setInput] = useState(sampleJson);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [indentSize, setIndentSize] = useState(2);
+
+  const highlightedOutput = useMemo(() => {
+    if (!output) return "";
+    return highlightJson(output);
+  }, [output]);
 
   const formatJson = () => {
     try {
@@ -63,7 +94,7 @@ const JSONFormatter = () => {
       <div className="container mx-auto px-4 py-8">
         <ToolHeader
           title="JSON Formatter"
-          description="Format, validate, and minify JSON data. All processing happens locally."
+          description="Format, validate, and minify JSON with syntax highlighting. All processing happens locally."
           icon={Braces}
           color="--tool-json"
         />
@@ -130,12 +161,19 @@ const JSONFormatter = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Output</label>
-              <Textarea
-                value={output}
-                readOnly
-                className="font-mono text-sm resize-none h-full min-h-[55vh] bg-secondary/50 border-border/50"
-                placeholder="Formatted JSON will appear here..."
-              />
+              {highlightedOutput ? (
+                <pre
+                  className="font-mono text-sm p-3 rounded-md h-full min-h-[55vh] bg-secondary/50 border border-border/50 overflow-auto whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: highlightedOutput }}
+                />
+              ) : (
+                <Textarea
+                  value={output}
+                  readOnly
+                  className="font-mono text-sm resize-none h-full min-h-[55vh] bg-secondary/50 border-border/50"
+                  placeholder="Formatted JSON will appear here..."
+                />
+              )}
             </div>
           </div>
         </motion.div>
