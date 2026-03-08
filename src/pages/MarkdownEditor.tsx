@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Copy, Download, Eye, Edit3, Columns } from "lucide-react";
+import { Copy, Download, Eye, Edit3, Columns, Sun, Moon } from "lucide-react";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
