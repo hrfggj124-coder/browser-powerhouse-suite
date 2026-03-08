@@ -35,3 +35,36 @@ const AdSlot = ({ slotName, className = "" }: AdSlotProps) => {
 };
 
 export default AdSlot;
+
+const DEFAULT_SLOTS = ["header_banner", "between_tools", "footer_banner"];
+
+export const CustomAdSlots = ({ className = "" }: { className?: string }) => {
+  const [ads, setAds] = useState<{ slot_name: string; html_content: string }[]>([]);
+
+  useEffect(() => {
+    const fetchCustomAds = async () => {
+      const { data } = await supabase
+        .from("ad_placements")
+        .select("slot_name, html_content")
+        .eq("is_active", true);
+      if (data) {
+        setAds(data.filter((a) => !DEFAULT_SLOTS.includes(a.slot_name) && a.html_content.trim()));
+      }
+    };
+    fetchCustomAds();
+  }, []);
+
+  if (!ads.length) return null;
+
+  return (
+    <div className={className}>
+      {ads.map((ad) => (
+        <div
+          key={ad.slot_name}
+          className="ad-slot"
+          dangerouslySetInnerHTML={{ __html: ad.html_content }}
+        />
+      ))}
+    </div>
+  );
+};
