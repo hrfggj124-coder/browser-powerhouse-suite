@@ -38,6 +38,7 @@ const TimelineEditor = ({
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
+  const wasDraggingRef = useRef(false);
 
   const duration = audioDuration || 60; // default 60s if no audio
 
