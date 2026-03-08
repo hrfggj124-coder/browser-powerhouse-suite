@@ -235,6 +235,79 @@ const AdAnalytics = () => {
             </div>
           </div>
 
+          {/* Per-slot breakdown */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">Engagement by Slot</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Horizontal bar chart */}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stats}
+                    layout="vertical"
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+                    <YAxis
+                      type="category"
+                      dataKey="slot_name"
+                      tick={{ fontSize: 10 }}
+                      className="fill-muted-foreground"
+                      width={100}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
+                    <Bar dataKey="impressions" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="clicks" fill="hsl(var(--primary) / 0.5)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Pie chart for impression share */}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats}
+                      dataKey="impressions"
+                      nameKey="slot_name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ slot_name, percent }) =>
+                        `${slot_name} (${(percent * 100).toFixed(0)}%)`
+                      }
+                      labelLine={false}
+                      fontSize={10}
+                    >
+                      {stats.map((_, i) => (
+                        <Cell
+                          key={i}
+                          fill={`hsl(var(--primary) / ${1 - i * (0.6 / Math.max(stats.length - 1, 1))})`}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
