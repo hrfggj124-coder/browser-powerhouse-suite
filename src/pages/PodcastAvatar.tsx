@@ -672,6 +672,7 @@ const PodcastAvatar = () => {
             audioDuration={audioDuration}
             currentTime={currentTime}
             isPlaying={isPlaying}
+            waveformPeaks={waveformPeaks}
           />
 
 
