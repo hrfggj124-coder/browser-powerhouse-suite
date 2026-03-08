@@ -4,6 +4,7 @@ import { MessageSquare, Send, Bot, User, Loader2, Sparkles } from "lucide-react"
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
