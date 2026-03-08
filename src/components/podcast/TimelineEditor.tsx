@@ -38,6 +38,7 @@ const TimelineEditor = ({
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
+  const wasDraggingRef = useRef(false);
 
   const duration = audioDuration || 60; // default 60s if no audio
 
@@ -94,6 +95,8 @@ const TimelineEditor = ({
 
   const handleMouseDown = (segId: string, edge: "start" | "end") => (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    wasDraggingRef.current = true;
     setDragging({ segId, edge });
   };
 
@@ -115,10 +118,16 @@ const TimelineEditor = ({
     [dragging, segments, duration, getPositionFromMouse]
   );
 
-  const handleMouseUp = () => setDragging(null);
+  const handleMouseUp = () => {
+    if (dragging) {
+      setDragging(null);
+      // Reset after a tick so the click handler can check it
+      setTimeout(() => { wasDraggingRef.current = false; }, 0);
+    }
+  };
 
   const handleTrackClick = (e: React.MouseEvent) => {
-    if (dragging) return; // don't seek while dragging segment edges
+    if (wasDraggingRef.current) return;
     const time = getPositionFromMouse(e.clientX);
     onSeek?.(time);
   };
@@ -151,7 +160,7 @@ const TimelineEditor = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onClick={handleTrackClick}
+        onClickCapture={handleTrackClick}
       >
         {/* Waveform visualization */}
         {waveformPeaks.length > 0 && (
@@ -208,10 +217,13 @@ const TimelineEditor = ({
         {/* Playback cursor - shown always when there's a currentTime */}
         {(isPlaying || currentTime > 0) && (
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-white z-10 pointer-events-none"
+            className="absolute top-0 bottom-0 w-1 bg-white z-10 pointer-events-none shadow-[0_0_6px_rgba(255,255,255,0.8)]"
             style={{ left: `${(currentTime / duration) * 100}%` }}
           >
-            <div className="w-2 h-2 bg-white rounded-full -ml-[3px] -mt-0.5" />
+            <div className="w-3 h-3 bg-white rounded-full -ml-[5px] -mt-1 shadow-md" />
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-background/90 text-foreground px-1 rounded whitespace-nowrap">
+              {formatTime(currentTime)}
+            </div>
           </div>
         )}
       </div>
