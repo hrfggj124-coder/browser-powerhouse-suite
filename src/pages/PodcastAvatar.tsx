@@ -544,11 +544,19 @@ const PodcastAvatar = () => {
           className="space-y-6"
         >
           {/* Actor Configuration */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-semibold text-lg">Actors ({actors.length}/6)</h3>
-            <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
-              <Plus className="w-4 h-4 mr-1" /> Add Actor
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={importProject}>
+                <FolderOpen className="w-4 h-4 mr-1" /> Import Project
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportProject}>
+                <Save className="w-4 h-4 mr-1" /> Export Project
+              </Button>
+              <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
+                <Plus className="w-4 h-4 mr-1" /> Add Actor
+              </Button>
+            </div>
           </div>
           <div className={`grid gap-6 ${actors.length <= 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
             {actors.map((actor, index) => (
