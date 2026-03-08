@@ -8,9 +8,10 @@ interface TimelineEditorProps {
   actors: Actor[];
   segments: TimelineSegment[];
   onSegmentsChange: (segments: TimelineSegment[]) => void;
-  audioDuration: number; // seconds, 0 if no audio
-  currentTime: number;   // current playback position in seconds
+  audioDuration: number;
+  currentTime: number;
   isPlaying: boolean;
+  waveformPeaks?: number[];
 }
 
 const COLORS = [
