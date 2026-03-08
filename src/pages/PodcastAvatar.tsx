@@ -31,7 +31,7 @@ const PodcastAvatar = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
-  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([null, null]);
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
