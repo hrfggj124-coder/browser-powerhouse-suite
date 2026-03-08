@@ -180,6 +180,7 @@ const PodcastAvatar = () => {
 
   const stopPlayback = () => {
     setIsPlaying(false);
+    setCurrentTime(0);
     cancelAnimationFrame(animFrameRef.current);
     setMouthOpen(0);
     try { musicSourceRef.current?.stop(); } catch { /* already stopped */ }
