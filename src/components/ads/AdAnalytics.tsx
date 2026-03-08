@@ -13,8 +13,11 @@ import {
   Legend,
   LineChart,
   Line,
+  Cell,
+  PieChart,
+  Pie,
 } from "recharts";
-import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
+import { format, subDays, eachDayOfInterval } from "date-fns";
 
 type Range = "7d" | "30d" | "all";
 type ChartMode = "bar" | "line";
