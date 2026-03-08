@@ -254,6 +254,29 @@ const PodcastAvatar = () => {
     }
   }, [musicVolume]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore when typing in input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        playAudio();
+      } else if (e.code === "KeyR" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (isRecording) stopRecording();
+        else startRecording();
+      } else if (e.code === "KeyE" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        exportVideo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isPlaying, isRecording, audioFile, isExporting]);
+
   // Export as video using canvas capture
   const exportVideo = async () => {
     if (!audioFile) {
@@ -785,6 +808,11 @@ const PodcastAvatar = () => {
             <p className="text-xs text-muted-foreground text-center">
               All processing happens locally — your files never leave your device.
             </p>
+            <div className="flex flex-wrap gap-3 justify-center text-xs text-muted-foreground">
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>Space</kbd> Play/Pause</span>
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>R</kbd> Record</span>
+              <span className="px-2 py-1 rounded bg-secondary"><kbd>Ctrl+E</kbd> Export Video</span>
+            </div>
           </div>
         </motion.div>
       </div>
