@@ -596,13 +596,13 @@ const PodcastAvatar = () => {
               className="rounded-2xl p-8 flex flex-col items-center justify-center gap-4"
               style={{ background: scene.gradient, minHeight: 340 }}
             >
-              <div className="flex items-center justify-center gap-8 md:gap-16">
+              <div className={`flex items-center justify-center flex-wrap ${actors.length <= 3 ? "gap-8 md:gap-16" : "gap-4 md:gap-8"}`}>
                 {actors.map((actor, i) => (
                   <div key={actor.id} className="flex flex-col items-center">
                     <canvas
                       ref={(el) => { canvasRefs.current[i] = el; }}
-                      width={AVATAR_SIZE}
-                      height={AVATAR_SIZE + 40}
+                      width={actors.length <= 3 ? AVATAR_SIZE : Math.max(120, AVATAR_SIZE - (actors.length - 3) * 20)}
+                      height={(actors.length <= 3 ? AVATAR_SIZE : Math.max(120, AVATAR_SIZE - (actors.length - 3) * 20)) + 40}
                       className="rounded-xl"
                     />
                   </div>
