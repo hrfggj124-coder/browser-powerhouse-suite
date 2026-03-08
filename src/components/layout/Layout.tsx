@@ -24,7 +24,23 @@ const Layout = ({ children }: LayoutProps) => {
           position="header"
           className="container mx-auto px-4 pt-2"
         />
-        {children}
+        {!isHomepage ? (
+          <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 min-w-0">{children}</div>
+            <aside className="w-full lg:w-72 shrink-0">
+              <div className="sticky top-20 space-y-4">
+                <CustomAdSlots
+                  placement={placement}
+                  currentRoute={currentRoute}
+                  position="sidebar"
+                  className="space-y-4"
+                />
+              </div>
+            </aside>
+          </div>
+        ) : (
+          children
+        )}
         <CustomAdSlots
           placement={placement}
           currentRoute={currentRoute}
