@@ -117,6 +117,12 @@ const TimelineEditor = ({
 
   const handleMouseUp = () => setDragging(null);
 
+  const handleTrackClick = (e: React.MouseEvent) => {
+    if (dragging) return; // don't seek while dragging segment edges
+    const time = getPositionFromMouse(e.clientX);
+    onSeek?.(time);
+  };
+
   return (
     <div className="glass-card p-6 space-y-4">
       <div className="flex items-center justify-between">
