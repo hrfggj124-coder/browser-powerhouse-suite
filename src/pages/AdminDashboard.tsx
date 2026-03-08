@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Shield, LogOut, Save } from "lucide-react";
+import { Shield, LogOut, Save, Eye, EyeOff } from "lucide-react";
 
 interface AdPlacement {
   id: string;
@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [ads, setAds] = useState<AdPlacement[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -55,9 +56,6 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const fetchAds = async () => {
-    // Admins need to see all ads including inactive ones
-    // We'll use a direct query - RLS only allows active for anon
-    // But admin is authenticated and has the role
     const { data, error } = await supabase
       .from("ad_placements")
       .select("*")
@@ -94,6 +92,10 @@ const AdminDashboard = () => {
 
   const updateAd = (id: string, updates: Partial<AdPlacement>) => {
     setAds((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+  };
+
+  const togglePreview = (id: string) => {
+    setPreviewing((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   if (loading) {
@@ -150,14 +152,37 @@ const AdminDashboard = () => {
                 placeholder="Paste your ad HTML code here..."
                 className="font-mono text-xs min-h-[120px]"
               />
-              <Button
-                onClick={() => handleSave(ad)}
-                disabled={saving === ad.id}
-                size="sm"
-              >
-                <Save className="w-4 h-4 mr-1" />
-                {saving === ad.id ? "Saving..." : "Save"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => handleSave(ad)}
+                  disabled={saving === ad.id}
+                  size="sm"
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  {saving === ad.id ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => togglePreview(ad.id)}
+                  disabled={!ad.html_content.trim()}
+                >
+                  {previewing[ad.id] ? (
+                    <><EyeOff className="w-4 h-4 mr-1" /> Hide Preview</>
+                  ) : (
+                    <><Eye className="w-4 h-4 mr-1" /> Preview</>
+                  )}
+                </Button>
+              </div>
+              {previewing[ad.id] && ad.html_content.trim() && (
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">Live Preview</p>
+                  <div
+                    className="ad-preview-render"
+                    dangerouslySetInnerHTML={{ __html: ad.html_content }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
