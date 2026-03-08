@@ -34,6 +34,7 @@ const TimelineEditor = ({
   currentTime,
   isPlaying,
   waveformPeaks = [],
+  onSeek,
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
