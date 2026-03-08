@@ -12,6 +12,7 @@ interface TimelineEditorProps {
   currentTime: number;
   isPlaying: boolean;
   waveformPeaks?: number[];
+  onSeek?: (time: number) => void;
 }
 
 const COLORS = [
