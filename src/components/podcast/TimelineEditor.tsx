@@ -139,11 +139,23 @@ const TimelineEditor = ({
       {/* Visual timeline track */}
       <div
         ref={trackRef}
-        className="relative h-16 rounded-lg bg-secondary/50 border border-border/30 overflow-hidden cursor-crosshair"
+        className="relative h-20 rounded-lg bg-secondary/50 border border-border/30 overflow-hidden cursor-crosshair"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        {/* Waveform visualization */}
+        {waveformPeaks.length > 0 && (
+          <div className="absolute inset-0 flex items-end pointer-events-none" style={{ padding: '8px 0' }}>
+            {waveformPeaks.map((peak, i) => (
+              <div
+                key={i}
+                className="flex-1 mx-px rounded-t-sm bg-primary/20"
+                style={{ height: `${Math.max(2, peak * 100)}%`, minWidth: 1 }}
+              />
+            ))}
+          </div>
+        )}
         {/* Time markers */}
         {Array.from({ length: Math.ceil(duration / 10) + 1 }, (_, i) => i * 10).map((t) => (
           <div
