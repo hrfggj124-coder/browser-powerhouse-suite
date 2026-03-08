@@ -50,6 +50,8 @@ const App = () => (
             <Route path="/markdown" element={<MarkdownEditor />} />
             <Route path="/json" element={<JSONFormatter />} />
             <Route path="/podcast" element={<PodcastAvatar />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

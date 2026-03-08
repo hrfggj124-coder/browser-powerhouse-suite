@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import Header from "./Header";
+import AdSlot from "@/components/ads/AdSlot";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,7 +10,11 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background bg-hero-pattern">
       <Header />
-      <main className="pt-16">{children}</main>
+      <main className="pt-16">
+        <AdSlot slotName="header_banner" className="container mx-auto px-4 pt-4" />
+        {children}
+      </main>
+      <AdSlot slotName="footer_banner" className="container mx-auto px-4 pb-4" />
       <footer className="border-t border-border/50 mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">

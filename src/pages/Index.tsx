@@ -196,6 +196,7 @@ const Index = () => {
             />
           ))}
         </div>
+        <AdSlot slotName="between_tools" className="mt-8" />
       </section>
 
       {/* Features Section */}
