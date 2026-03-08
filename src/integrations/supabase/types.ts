@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_analytics: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          page_path: string | null
+          slot_name: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          page_path?: string | null
+          slot_name: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          slot_name?: string
+        }
+        Relationships: []
+      }
       ad_placements: {
         Row: {
           html_content: string
