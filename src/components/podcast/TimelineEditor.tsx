@@ -205,8 +205,8 @@ const TimelineEditor = ({
           );
         })}
 
-        {/* Playback cursor */}
-        {isPlaying && (
+        {/* Playback cursor - shown always when there's a currentTime */}
+        {(isPlaying || currentTime > 0) && (
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white z-10 pointer-events-none"
             style={{ left: `${(currentTime / duration) * 100}%` }}
