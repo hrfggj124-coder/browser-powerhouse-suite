@@ -254,6 +254,29 @@ const PodcastAvatar = () => {
     }
   }, [musicVolume]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore when typing in input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        playAudio();
+      } else if (e.code === "KeyR" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (isRecording) stopRecording();
+        else startRecording();
+      } else if (e.code === "KeyE" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        exportVideo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isPlaying, isRecording, audioFile, isExporting]);
+
   // Export as video using canvas capture
   const exportVideo = async () => {
     if (!audioFile) {
