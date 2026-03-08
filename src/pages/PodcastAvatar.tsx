@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import ActorConfig from "@/components/podcast/ActorConfig";
 import AudioWaveform from "@/components/podcast/AudioWaveform";
+import TimelineEditor from "@/components/podcast/TimelineEditor";
+import ActorPresets from "@/components/podcast/ActorPresets";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
 import {
-  Actor, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
+  Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
 const PodcastAvatar = () => {
@@ -29,6 +31,10 @@ const PodcastAvatar = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [timelineSegments, setTimelineSegments] = useState<TimelineSegment[]>([]);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const playStartTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
@@ -114,6 +120,13 @@ const PodcastAvatar = () => {
   const handleAudioSelected = (files: File[]) => {
     if (files.length > 0) {
       setAudioFile(files[0]);
+      // Detect duration
+      const tempAudio = new Audio(URL.createObjectURL(files[0]));
+      tempAudio.addEventListener("loadedmetadata", () => {
+        if (isFinite(tempAudio.duration)) {
+          setAudioDuration(tempAudio.duration);
+        }
+      });
       toast.success("Audio loaded");
     }
   };
@@ -127,6 +140,17 @@ const PodcastAvatar = () => {
 
   const scene = BACKGROUND_SCENES.find((s) => s.id === selectedScene) || BACKGROUND_SCENES[6];
 
+  const getActiveActorAtTime = useCallback((elapsedSec: number): number => {
+    if (timelineSegments.length > 0) {
+      const seg = timelineSegments.find(
+        (s) => elapsedSec >= s.startTime && elapsedSec < s.endTime
+      );
+      if (seg) return seg.actorIndex % actors.length;
+    }
+    // Fallback: auto-alternate every 4 seconds
+    return Math.floor(elapsedSec / 4) % actors.length;
+  }, [timelineSegments, actors.length]);
+
   const animate = useCallback(() => {
     if (!analyserRef.current) return;
 
@@ -138,8 +162,9 @@ const PodcastAvatar = () => {
     const mouthVal = normalized * MOUTH_STATES.wide;
     setMouthOpen(mouthVal);
 
-    const time = Date.now();
-    const actorIdx = Math.floor(time / 4000) % actors.length;
+    const elapsed = (Date.now() - playStartTimeRef.current) / 1000;
+    setCurrentTime(elapsed);
+    const actorIdx = getActiveActorAtTime(elapsed);
     setActiveActor(actorIdx);
 
     canvasRefs.current.forEach((canvas, i) => {
@@ -151,10 +176,11 @@ const PodcastAvatar = () => {
     });
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [actors]);
+  }, [actors, getActiveActorAtTime]);
 
   const stopPlayback = () => {
     setIsPlaying(false);
+    setCurrentTime(0);
     cancelAnimationFrame(animFrameRef.current);
     setMouthOpen(0);
     try { musicSourceRef.current?.stop(); } catch { /* already stopped */ }
@@ -207,6 +233,8 @@ const PodcastAvatar = () => {
       }
 
       source.start();
+      playStartTimeRef.current = Date.now();
+      setCurrentTime(0);
       setIsPlaying(true);
       animate();
 
@@ -294,6 +322,7 @@ const PodcastAvatar = () => {
       // Animation loop for export
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       let running = true;
+      const exportStartTime = Date.now();
 
       const drawFrame = () => {
         if (!running) return;
@@ -302,8 +331,8 @@ const PodcastAvatar = () => {
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         const normalized = Math.min(avg / 80, 1);
         const mouthVal = normalized * MOUTH_STATES.wide;
-        const time = Date.now();
-        const actorIdx = Math.floor(time / 4000) % actors.length;
+        const elapsed = (Date.now() - exportStartTime) / 1000;
+        const actorIdx = getActiveActorAtTime(elapsed);
 
         // Background
         const gradient = ctx.createLinearGradient(0, 0, 0, exportCanvas.height);
@@ -424,6 +453,18 @@ const PodcastAvatar = () => {
     }
   };
 
+  const applyPreset = (preset: ActorPreset, targetIndex: number) => {
+    if (targetIndex >= actors.length) return;
+    updateActor(targetIndex, {
+      name: preset.actor.name,
+      sex: preset.actor.sex,
+      age: preset.actor.age,
+      color: preset.actor.color,
+      speechBubble: preset.actor.speechBubble,
+    });
+    toast.success(`Applied "${preset.name}" to Actor ${targetIndex + 1}`);
+  };
+
   // Initial draw
   useEffect(() => {
     canvasRefs.current.forEach((canvas, i) => {
@@ -507,7 +548,20 @@ const PodcastAvatar = () => {
             ))}
           </div>
 
-          {/* Background Scene */}
+          {/* Actor Presets */}
+          <ActorPresets onApplyPreset={applyPreset} actorCount={actors.length} />
+
+          {/* Speaker Timeline */}
+          <TimelineEditor
+            actors={actors}
+            segments={timelineSegments}
+            onSegmentsChange={setTimelineSegments}
+            audioDuration={audioDuration}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+          />
+
+
           <div className="glass-card p-6 space-y-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Image className="w-5 h-5 text-primary" /> Background Scene

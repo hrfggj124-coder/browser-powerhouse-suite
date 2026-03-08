@@ -9,12 +9,65 @@ export interface Actor {
   speechBubble: string;
 }
 
+export interface TimelineSegment {
+  id: string;
+  actorIndex: number;
+  startTime: number; // seconds
+  endTime: number;   // seconds
+}
+
+export interface ActorPreset {
+  id: string;
+  name: string;
+  emoji: string;
+  actor: Omit<Actor, "id" | "image" | "imageUrl">;
+}
+
 export interface BackgroundScene {
   id: string;
   name: string;
   gradient: string;
   emoji?: string;
 }
+
+export const ACTOR_PRESETS: ActorPreset[] = [
+  {
+    id: "news-anchor",
+    name: "News Anchor",
+    emoji: "📰",
+    actor: { name: "News Anchor", sex: "male", age: "adult", color: "hsl(var(--tool-resume))", speechBubble: "Breaking news..." },
+  },
+  {
+    id: "comedian",
+    name: "Comedian",
+    emoji: "😂",
+    actor: { name: "Comedian", sex: "male", age: "young", color: "hsl(var(--tool-convert))", speechBubble: "So here's the thing..." },
+  },
+  {
+    id: "interviewer",
+    name: "Interviewer",
+    emoji: "🎤",
+    actor: { name: "Interviewer", sex: "female", age: "adult", color: "hsl(var(--primary))", speechBubble: "Tell me more..." },
+  },
+  {
+    id: "storyteller",
+    name: "Storyteller",
+    emoji: "📖",
+    actor: { name: "Storyteller", sex: "female", age: "senior", color: "hsl(var(--tool-password))", speechBubble: "Once upon a time..." },
+  },
+  {
+    id: "tech-host",
+    name: "Tech Host",
+    emoji: "💻",
+    actor: { name: "Tech Host", sex: "male", age: "young", color: "hsl(var(--tool-compress))", speechBubble: "Let's dive in!" },
+  },
+  {
+    id: "debate",
+    name: "Debater",
+    emoji: "⚖️",
+    actor: { name: "Debater", sex: "female", age: "adult", color: "hsl(var(--tool-weather))", speechBubble: "I disagree because..." },
+  },
+];
 
 export const BACKGROUND_SCENES: BackgroundScene[] = [
   { id: "studio", name: "Studio", gradient: "linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" },
