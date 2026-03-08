@@ -322,6 +322,7 @@ const PodcastAvatar = () => {
       // Animation loop for export
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       let running = true;
+      const exportStartTime = Date.now();
 
       const drawFrame = () => {
         if (!running) return;
@@ -330,8 +331,8 @@ const PodcastAvatar = () => {
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         const normalized = Math.min(avg / 80, 1);
         const mouthVal = normalized * MOUTH_STATES.wide;
-        const time = Date.now();
-        const actorIdx = Math.floor(time / 4000) % actors.length;
+        const elapsed = (Date.now() - exportStartTime) / 1000;
+        const actorIdx = getActiveActorAtTime(elapsed);
 
         // Background
         const gradient = ctx.createLinearGradient(0, 0, 0, exportCanvas.height);
