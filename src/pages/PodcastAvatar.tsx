@@ -140,6 +140,17 @@ const PodcastAvatar = () => {
 
   const scene = BACKGROUND_SCENES.find((s) => s.id === selectedScene) || BACKGROUND_SCENES[6];
 
+  const getActiveActorAtTime = useCallback((elapsedSec: number): number => {
+    if (timelineSegments.length > 0) {
+      const seg = timelineSegments.find(
+        (s) => elapsedSec >= s.startTime && elapsedSec < s.endTime
+      );
+      if (seg) return seg.actorIndex % actors.length;
+    }
+    // Fallback: auto-alternate every 4 seconds
+    return Math.floor(elapsedSec / 4) % actors.length;
+  }, [timelineSegments, actors.length]);
+
   const animate = useCallback(() => {
     if (!analyserRef.current) return;
 
@@ -151,8 +162,9 @@ const PodcastAvatar = () => {
     const mouthVal = normalized * MOUTH_STATES.wide;
     setMouthOpen(mouthVal);
 
-    const time = Date.now();
-    const actorIdx = Math.floor(time / 4000) % actors.length;
+    const elapsed = (Date.now() - playStartTimeRef.current) / 1000;
+    setCurrentTime(elapsed);
+    const actorIdx = getActiveActorAtTime(elapsed);
     setActiveActor(actorIdx);
 
     canvasRefs.current.forEach((canvas, i) => {
@@ -164,7 +176,7 @@ const PodcastAvatar = () => {
     });
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [actors]);
+  }, [actors, getActiveActorAtTime]);
 
   const stopPlayback = () => {
     setIsPlaying(false);
