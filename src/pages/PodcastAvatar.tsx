@@ -43,6 +43,39 @@ const PodcastAvatar = () => {
     setActors((prev) => prev.map((a, i) => (i === index ? { ...a, ...updates } : a)));
   };
 
+  const addActor = () => {
+    if (actors.length >= 6) {
+      toast.error("Maximum 6 actors allowed");
+      return;
+    }
+    const id = String(Date.now());
+    const colors = [
+      "hsl(var(--primary))", "hsl(var(--tool-compress))", "hsl(var(--tool-resume))",
+      "hsl(var(--tool-password))", "hsl(var(--tool-convert))", "hsl(var(--tool-weather))",
+    ];
+    setActors((prev) => [
+      ...prev,
+      {
+        id,
+        name: `Actor ${prev.length + 1}`,
+        sex: prev.length % 2 === 0 ? "male" : "female",
+        age: "adult",
+        color: colors[prev.length % colors.length],
+        image: null,
+        imageUrl: null,
+        speechBubble: "",
+      },
+    ]);
+  };
+
+  const removeActor = (index: number) => {
+    if (actors.length <= 1) {
+      toast.error("Need at least 1 actor");
+      return;
+    }
+    setActors((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
