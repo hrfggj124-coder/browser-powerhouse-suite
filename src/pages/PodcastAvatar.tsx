@@ -452,6 +452,18 @@ const PodcastAvatar = () => {
     }
   };
 
+  const applyPreset = (preset: ActorPreset, targetIndex: number) => {
+    if (targetIndex >= actors.length) return;
+    updateActor(targetIndex, {
+      name: preset.actor.name,
+      sex: preset.actor.sex,
+      age: preset.actor.age,
+      color: preset.actor.color,
+      speechBubble: preset.actor.speechBubble,
+    });
+    toast.success(`Applied "${preset.name}" to Actor ${targetIndex + 1}`);
+  };
+
   // Initial draw
   useEffect(() => {
     canvasRefs.current.forEach((canvas, i) => {
