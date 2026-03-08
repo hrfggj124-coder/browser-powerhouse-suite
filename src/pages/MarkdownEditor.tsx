@@ -65,6 +65,7 @@ marked.use({ renderer });
 const MarkdownEditor = () => {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const [previewDark, setPreviewDark] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const htmlContent = useMemo(() => {
