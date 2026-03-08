@@ -446,9 +446,27 @@ const PodcastAvatar = () => {
           className="space-y-6"
         >
           {/* Actor Configuration */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Actors ({actors.length}/6)</h3>
+            <Button variant="outline" size="sm" onClick={addActor} disabled={actors.length >= 6}>
+              <Plus className="w-4 h-4 mr-1" /> Add Actor
+            </Button>
+          </div>
+          <div className={`grid gap-6 ${actors.length <= 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
             {actors.map((actor, index) => (
-              <ActorConfig key={actor.id} actor={actor} index={index} onUpdate={updateActor} />
+              <div key={actor.id} className="relative">
+                {actors.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeActor(index)}
+                    className="absolute top-2 right-2 z-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+                <ActorConfig actor={actor} index={index} onUpdate={updateActor} />
+              </div>
             ))}
           </div>
 
