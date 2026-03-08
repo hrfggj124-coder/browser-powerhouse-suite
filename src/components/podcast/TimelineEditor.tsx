@@ -129,6 +129,7 @@ const TimelineEditor = ({
   const handleTrackClick = (e: React.MouseEvent) => {
     if (wasDraggingRef.current) return;
     const time = getPositionFromMouse(e.clientX);
+    console.log("[Timeline] click seek to", time, "duration", duration);
     onSeek?.(time);
   };
 
