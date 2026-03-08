@@ -465,6 +465,62 @@ const PodcastAvatar = () => {
     toast.success(`Applied "${preset.name}" to Actor ${targetIndex + 1}`);
   };
 
+  // Export project as JSON
+  const exportProject = () => {
+    const project = {
+      version: 1,
+      actors: actors.map(({ image, imageUrl, ...rest }) => rest),
+      timelineSegments,
+      selectedScene,
+      musicVolume,
+      showWaveform,
+      audioDuration,
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "podcast-project.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Project exported");
+  };
+
+  // Import project from JSON
+  const importProject = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const project = JSON.parse(text);
+        if (!project.version || !project.actors) {
+          toast.error("Invalid project file");
+          return;
+        }
+        setActors(
+          project.actors.map((a: any) => ({
+            ...a,
+            image: null,
+            imageUrl: null,
+          }))
+        );
+        if (project.timelineSegments) setTimelineSegments(project.timelineSegments);
+        if (project.selectedScene) setSelectedScene(project.selectedScene);
+        if (project.musicVolume !== undefined) setMusicVolume(project.musicVolume);
+        if (project.showWaveform !== undefined) setShowWaveform(project.showWaveform);
+        if (project.audioDuration) setAudioDuration(project.audioDuration);
+        toast.success("Project imported! Re-upload audio/music files to continue.");
+      } catch {
+        toast.error("Failed to parse project file");
+      }
+    };
+    input.click();
+  };
+
   // Initial draw
   useEffect(() => {
     canvasRefs.current.forEach((canvas, i) => {
