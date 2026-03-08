@@ -19,6 +19,8 @@ export type Database = {
           html_content: string
           id: string
           is_active: boolean
+          placement: string
+          position: string
           slot_name: string
           updated_at: string
           updated_by: string | null
@@ -27,6 +29,8 @@ export type Database = {
           html_content?: string
           id?: string
           is_active?: boolean
+          placement?: string
+          position?: string
           slot_name: string
           updated_at?: string
           updated_by?: string | null
@@ -35,6 +39,8 @@ export type Database = {
           html_content?: string
           id?: string
           is_active?: boolean
+          placement?: string
+          position?: string
           slot_name?: string
           updated_at?: string
           updated_by?: string | null
