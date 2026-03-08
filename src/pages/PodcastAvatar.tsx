@@ -118,9 +118,34 @@ const PodcastAvatar = () => {
     }
   };
 
+  const generateWaveformPeaks = async (file: File, numBars = 200) => {
+    try {
+      const ctx = new OfflineAudioContext(1, 1, 44100);
+      const arrayBuf = await file.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuf);
+      const data = audioBuffer.getChannelData(0);
+      const step = Math.floor(data.length / numBars);
+      const peaks: number[] = [];
+      for (let i = 0; i < numBars; i++) {
+        let max = 0;
+        for (let j = i * step; j < (i + 1) * step && j < data.length; j++) {
+          const abs = Math.abs(data[j]);
+          if (abs > max) max = abs;
+        }
+        peaks.push(max);
+      }
+      // Normalize
+      const peakMax = Math.max(...peaks, 0.01);
+      setWaveformPeaks(peaks.map((p) => p / peakMax));
+    } catch {
+      setWaveformPeaks([]);
+    }
+  };
+
   const handleAudioSelected = (files: File[]) => {
     if (files.length > 0) {
       setAudioFile(files[0]);
+      generateWaveformPeaks(files[0]);
       // Detect duration
       const tempAudio = new Audio(URL.createObjectURL(files[0]));
       tempAudio.addEventListener("loadedmetadata", () => {
