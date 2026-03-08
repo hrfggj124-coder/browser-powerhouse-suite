@@ -673,6 +673,11 @@ const PodcastAvatar = () => {
             currentTime={currentTime}
             isPlaying={isPlaying}
             waveformPeaks={waveformPeaks}
+            onSeek={(time) => {
+              if (!isPlaying) {
+                setCurrentTime(time);
+              }
+            }}
           />
 
 

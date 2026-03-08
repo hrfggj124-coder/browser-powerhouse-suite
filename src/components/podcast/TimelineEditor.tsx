@@ -12,6 +12,7 @@ interface TimelineEditorProps {
   currentTime: number;
   isPlaying: boolean;
   waveformPeaks?: number[];
+  onSeek?: (time: number) => void;
 }
 
 const COLORS = [
@@ -33,6 +34,7 @@ const TimelineEditor = ({
   currentTime,
   isPlaying,
   waveformPeaks = [],
+  onSeek,
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
@@ -115,6 +117,12 @@ const TimelineEditor = ({
 
   const handleMouseUp = () => setDragging(null);
 
+  const handleTrackClick = (e: React.MouseEvent) => {
+    if (dragging) return; // don't seek while dragging segment edges
+    const time = getPositionFromMouse(e.clientX);
+    onSeek?.(time);
+  };
+
   return (
     <div className="glass-card p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -143,6 +151,7 @@ const TimelineEditor = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClick={handleTrackClick}
       >
         {/* Waveform visualization */}
         {waveformPeaks.length > 0 && (
@@ -196,8 +205,8 @@ const TimelineEditor = ({
           );
         })}
 
-        {/* Playback cursor */}
-        {isPlaying && (
+        {/* Playback cursor - shown always when there's a currentTime */}
+        {(isPlaying || currentTime > 0) && (
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-white z-10 pointer-events-none"
             style={{ left: `${(currentTime / duration) * 100}%` }}
