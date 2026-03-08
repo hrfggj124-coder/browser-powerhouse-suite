@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdImpression } from "./useAdTracking";
 
 interface AdSlotProps {
   slotName: string;
@@ -8,6 +9,7 @@ interface AdSlotProps {
 
 const AdSlot = ({ slotName, className = "" }: AdSlotProps) => {
   const [html, setHtml] = useState<string | null>(null);
+  const { ref, handleClick } = useAdImpression(slotName, !!html);
 
   useEffect(() => {
     const fetchAd = async () => {
@@ -28,6 +30,8 @@ const AdSlot = ({ slotName, className = "" }: AdSlotProps) => {
 
   return (
     <div
+      ref={ref}
+      onClick={handleClick}
       className={`ad-slot ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
@@ -92,12 +96,20 @@ export const CustomAdSlots = ({
   return (
     <div className={className}>
       {ads.map((ad) => (
-        <div
-          key={ad.slot_name}
-          className="ad-slot"
-          dangerouslySetInnerHTML={{ __html: ad.html_content }}
-        />
+        <TrackedAdSlot key={ad.slot_name} slotName={ad.slot_name} html={ad.html_content} />
       ))}
     </div>
   );
 };
+
+function TrackedAdSlot({ slotName, html }: { slotName: string; html: string }) {
+  const { ref, handleClick } = useAdImpression(slotName, true);
+  return (
+    <div
+      ref={ref}
+      onClick={handleClick}
+      className="ad-slot"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
