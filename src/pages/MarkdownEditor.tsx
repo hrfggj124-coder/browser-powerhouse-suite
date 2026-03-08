@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Copy, Download, Eye, Edit3, Columns } from "lucide-react";
 import { marked } from "marked";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +21,11 @@ const defaultMarkdown = `# Welcome to the Markdown Editor
 \`\`\`javascript
 const greeting = "Hello, World!";
 console.log(greeting);
+\`\`\`
+
+\`\`\`python
+def hello():
+    print("Hello from Python!")
 \`\`\`
 
 ### Lists
@@ -40,17 +47,42 @@ Visit [Lovable](https://lovable.dev) for more tools!
 
 type ViewMode = "split" | "edit" | "preview";
 
+// Configure marked to use highlight.js
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
+
+const renderer = new marked.Renderer();
+renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
+  const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
+  const highlighted = hljs.highlight(text, { language }).value;
+  return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`;
+};
+
+marked.use({ renderer });
+
 const MarkdownEditor = () => {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const htmlContent = useMemo(() => {
     try {
-      return marked(markdown, { breaks: true, gfm: true }) as string;
+      return marked(markdown) as string;
     } catch {
       return "<p>Error rendering markdown</p>";
     }
   }, [markdown]);
+
+  // Highlight inline code after render
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.querySelectorAll("pre code:not(.hljs)").forEach((block) => {
+        hljs.highlightElement(block as HTMLElement);
+      });
+    }
+  }, [htmlContent]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(markdown);
@@ -69,7 +101,7 @@ const MarkdownEditor = () => {
   };
 
   const handleDownloadHtml = () => {
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Markdown Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.6}pre{background:#f4f4f4;padding:1rem;border-radius:8px;overflow-x:auto}code{font-family:monospace}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}blockquote{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#666}</style></head><body>${htmlContent}</body></html>`;
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Markdown Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.6}pre{background:#1e1e2e;padding:1rem;border-radius:8px;overflow-x:auto}code{font-family:monospace}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}blockquote{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#666}</style></head><body>${htmlContent}</body></html>`;
     const blob = new Blob([fullHtml], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -85,7 +117,7 @@ const MarkdownEditor = () => {
       <div className="container mx-auto px-4 py-8">
         <ToolHeader
           title="Markdown Editor"
-          description="Write Markdown with a live preview. All processing happens locally."
+          description="Write Markdown with a live preview and syntax highlighting. All processing happens locally."
           icon={Edit3}
           color="--tool-markdown"
         />
@@ -151,6 +183,7 @@ const MarkdownEditor = () => {
             )}
             {viewMode !== "edit" && (
               <div
+                ref={previewRef}
                 className="prose prose-sm dark:prose-invert max-w-none p-6 rounded-xl bg-secondary/30 border border-border/50 overflow-auto"
                 style={{ minHeight: "70vh" }}
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
