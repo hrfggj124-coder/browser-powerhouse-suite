@@ -95,6 +95,8 @@ const TimelineEditor = ({
 
   const handleMouseDown = (segId: string, edge: "start" | "end") => (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    wasDraggingRef.current = true;
     setDragging({ segId, edge });
   };
 
@@ -116,10 +118,16 @@ const TimelineEditor = ({
     [dragging, segments, duration, getPositionFromMouse]
   );
 
-  const handleMouseUp = () => setDragging(null);
+  const handleMouseUp = () => {
+    if (dragging) {
+      setDragging(null);
+      // Reset after a tick so the click handler can check it
+      setTimeout(() => { wasDraggingRef.current = false; }, 0);
+    }
+  };
 
   const handleTrackClick = (e: React.MouseEvent) => {
-    if (dragging) return; // don't seek while dragging segment edges
+    if (wasDraggingRef.current) return;
     const time = getPositionFromMouse(e.clientX);
     onSeek?.(time);
   };
