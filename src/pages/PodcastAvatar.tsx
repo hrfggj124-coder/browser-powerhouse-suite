@@ -120,6 +120,13 @@ const PodcastAvatar = () => {
   const handleAudioSelected = (files: File[]) => {
     if (files.length > 0) {
       setAudioFile(files[0]);
+      // Detect duration
+      const tempAudio = new Audio(URL.createObjectURL(files[0]));
+      tempAudio.addEventListener("loadedmetadata", () => {
+        if (isFinite(tempAudio.duration)) {
+          setAudioDuration(tempAudio.duration);
+        }
+      });
       toast.success("Audio loaded");
     }
   };
