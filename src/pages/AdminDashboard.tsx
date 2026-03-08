@@ -227,6 +227,8 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
+        <AdAnalytics />
+
         <div className="space-y-6">
           {ads.map((ad) => (
             <div key={ad.id} className="glass-card p-6 space-y-4">
