@@ -151,6 +151,7 @@ const TimelineEditor = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClick={handleTrackClick}
       >
         {/* Waveform visualization */}
         {waveformPeaks.length > 0 && (
