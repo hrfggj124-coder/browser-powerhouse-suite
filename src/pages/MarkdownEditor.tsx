@@ -194,7 +194,11 @@ const MarkdownEditor = () => {
             {viewMode !== "edit" && (
               <div
                 ref={previewRef}
-                className="prose prose-sm dark:prose-invert max-w-none p-6 rounded-xl bg-secondary/30 border border-border/50 overflow-auto"
+                className={`prose prose-sm max-w-none p-6 rounded-xl border overflow-auto transition-colors ${
+                  previewDark
+                    ? "prose-invert bg-secondary/30 border-border/50"
+                    : "bg-white text-gray-900 border-gray-200"
+                }`}
                 style={{ minHeight: "70vh" }}
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
