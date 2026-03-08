@@ -154,6 +154,15 @@ const MarkdownEditor = () => {
               </Button>
             </div>
             <div className="flex-1" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPreviewDark(!previewDark)}
+              title={previewDark ? "Switch to light preview" : "Switch to dark preview"}
+            >
+              {previewDark ? <Sun className="w-4 h-4 mr-1" /> : <Moon className="w-4 h-4 mr-1" />}
+              {previewDark ? "Light" : "Dark"}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleCopy}>
               <Copy className="w-4 h-4 mr-1" /> Copy MD
             </Button>
