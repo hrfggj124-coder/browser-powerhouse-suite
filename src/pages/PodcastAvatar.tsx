@@ -547,7 +547,20 @@ const PodcastAvatar = () => {
             ))}
           </div>
 
-          {/* Background Scene */}
+          {/* Actor Presets */}
+          <ActorPresets onApplyPreset={applyPreset} actorCount={actors.length} />
+
+          {/* Speaker Timeline */}
+          <TimelineEditor
+            actors={actors}
+            segments={timelineSegments}
+            onSegmentsChange={setTimelineSegments}
+            audioDuration={audioDuration}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+          />
+
+
           <div className="glass-card p-6 space-y-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Image className="w-5 h-5 text-primary" /> Background Scene
