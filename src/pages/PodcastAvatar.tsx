@@ -680,8 +680,26 @@ const PodcastAvatar = () => {
             isPlaying={isPlaying}
             waveformPeaks={waveformPeaks}
             onSeek={(time) => {
-              if (!isPlaying) {
-                setCurrentTime(time);
+              setCurrentTime(time);
+              // If playing, update the playback offset
+              if (isPlaying) {
+                playStartTimeRef.current = Date.now() - time * 1000;
+              }
+            }}
+            audioFile={audioFile}
+            onSmartAutoFill={async () => {
+              if (!audioFile) {
+                toast.error("Upload audio first for smart auto-fill");
+                return;
+              }
+              toast.info("Analyzing audio...");
+              try {
+                const segments = await smartAutoFill(audioFile, actors.length);
+                setTimelineSegments(segments);
+                toast.success(`Detected ${segments.length} speaking segments!`);
+              } catch (err) {
+                console.error(err);
+                toast.error("Failed to analyze audio");
               }
             }}
           />
