@@ -17,6 +17,7 @@ export function drawAvatar(
 
   if (actor.imageUrl) {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = actor.imageUrl;
     ctx.save();
     ctx.beginPath();
@@ -24,6 +25,50 @@ export function drawAvatar(
     ctx.clip();
     ctx.drawImage(img, cx - 70, cy - 80, 140, 140);
     ctx.restore();
+
+    // Draw mouth overlay that blends with the photo
+    // Position at lower third of face circle for natural lip placement
+    const photoMouthY = cy + 25;
+    if (mouthOpenAmount > 1) {
+      ctx.save();
+      // Clip mouth area to face circle so it doesn't overflow
+      ctx.beginPath();
+      ctx.arc(cx, cy - 10, 70, 0, Math.PI * 2);
+      ctx.clip();
+
+      const mouthW = 18 + mouthOpenAmount * 0.4;
+      const mouthH = 2 + mouthOpenAmount * 0.8;
+
+      // Shadow behind mouth for depth
+      ctx.beginPath();
+      ctx.ellipse(cx, photoMouthY, mouthW + 2, Math.max(3, mouthH + 1), 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fill();
+
+      // Lip shape
+      ctx.beginPath();
+      ctx.ellipse(cx, photoMouthY, mouthW, Math.max(2, mouthH), 0, 0, Math.PI * 2);
+      ctx.fillStyle = mouthOpenAmount > 5 ? "#8b2020" : "#a63030";
+      ctx.fill();
+
+      // Inner mouth darkness
+      if (mouthOpenAmount > 6) {
+        ctx.beginPath();
+        ctx.ellipse(cx, photoMouthY, mouthW * 0.6, mouthH * 0.5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#3d0d0d";
+        ctx.fill();
+      }
+
+      // Upper lip line
+      ctx.beginPath();
+      ctx.moveTo(cx - mouthW, photoMouthY);
+      ctx.quadraticCurveTo(cx, photoMouthY - mouthH * 0.3, cx + mouthW, photoMouthY);
+      ctx.strokeStyle = "rgba(0,0,0,0.2)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.restore();
+    }
   } else {
     const skinColor = actor.sex === "male" ? "#f0c8a0" : "#f5d5c0";
     const hairColor =
