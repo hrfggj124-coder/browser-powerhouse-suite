@@ -143,6 +143,11 @@ const TimelineEditor = ({
           <Clock className="w-5 h-5 text-primary" /> Speaker Timeline
         </h3>
         <div className="flex gap-2">
+          {audioFile && onSmartAutoFill && (
+            <Button variant="outline" size="sm" onClick={onSmartAutoFill}>
+              <Sparkles className="w-4 h-4 mr-1" /> Smart Fill
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={autoFill}>
             Auto-Fill
           </Button>
