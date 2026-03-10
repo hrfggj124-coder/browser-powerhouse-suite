@@ -106,20 +106,22 @@ export function drawAvatar(
     ctx.fill();
   }
 
-  // Mouth
-  const mouthY = actor.imageUrl ? cy + 50 : cy + 15;
-  ctx.beginPath();
-  const mouthWidth = 20 + mouthOpenAmount * 0.5;
-  const mouthHeight = 2 + mouthOpenAmount;
-  ctx.ellipse(cx, mouthY, mouthWidth, Math.max(2, mouthHeight), 0, 0, Math.PI * 2);
-  ctx.fillStyle = mouthOpenAmount > 5 ? "#c0392b" : "#e74c3c";
-  ctx.fill();
-
-  if (mouthOpenAmount > 8) {
+  // Mouth (only for non-image actors; image actors have mouth drawn in the image section)
+  if (!actor.imageUrl) {
+    const mouthY = cy + 15;
     ctx.beginPath();
-    ctx.ellipse(cx, mouthY, mouthWidth * 0.6, mouthHeight * 0.5, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#7f1d1d";
+    const mouthWidth = 20 + mouthOpenAmount * 0.5;
+    const mouthHeight = 2 + mouthOpenAmount;
+    ctx.ellipse(cx, mouthY, mouthWidth, Math.max(2, mouthHeight), 0, 0, Math.PI * 2);
+    ctx.fillStyle = mouthOpenAmount > 5 ? "#c0392b" : "#e74c3c";
     ctx.fill();
+
+    if (mouthOpenAmount > 8) {
+      ctx.beginPath();
+      ctx.ellipse(cx, mouthY, mouthWidth * 0.6, mouthHeight * 0.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#7f1d1d";
+      ctx.fill();
+    }
   }
 
   // Body
