@@ -1,1 +1,4 @@
 project_id = "utosbuvhjxcblhcudeih"
+
+[functions.generate-background]
+verify_jwt = false
