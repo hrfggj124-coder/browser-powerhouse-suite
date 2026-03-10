@@ -817,7 +817,7 @@ const PodcastAvatar = () => {
             <div
               ref={stageRef}
               className="rounded-2xl p-8 flex flex-col items-center justify-center gap-4"
-              style={{ background: scene.gradient, minHeight: 340 }}
+              style={{ background: stageBackground, minHeight: 340 }}
             >
               <div className={`flex items-center justify-center flex-wrap ${actors.length <= 3 ? "gap-8 md:gap-16" : "gap-4 md:gap-8"}`}>
                 {actors.map((actor, i) => (
