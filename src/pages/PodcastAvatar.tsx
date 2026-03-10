@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -12,7 +12,9 @@ import ActorConfig from "@/components/podcast/ActorConfig";
 import AudioWaveform from "@/components/podcast/AudioWaveform";
 import TimelineEditor from "@/components/podcast/TimelineEditor";
 import ActorPresets from "@/components/podcast/ActorPresets";
+import BackgroundGenerator from "@/components/podcast/BackgroundGenerator";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
+import { smartAutoFill } from "@/components/podcast/audioAnalysis";
 import {
   Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
