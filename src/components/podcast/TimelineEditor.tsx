@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Actor, TimelineSegment } from "./types";
@@ -13,6 +13,8 @@ interface TimelineEditorProps {
   isPlaying: boolean;
   waveformPeaks?: number[];
   onSeek?: (time: number) => void;
+  audioFile?: File | null;
+  onSmartAutoFill?: () => void;
 }
 
 const COLORS = [
