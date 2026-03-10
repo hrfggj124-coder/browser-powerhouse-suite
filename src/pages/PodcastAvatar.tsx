@@ -37,7 +37,7 @@ const PodcastAvatar = () => {
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
-  const playStartTimeRef = useRef<number>(0);
+  const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
