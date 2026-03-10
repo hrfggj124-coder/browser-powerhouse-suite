@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Image, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -12,7 +12,9 @@ import ActorConfig from "@/components/podcast/ActorConfig";
 import AudioWaveform from "@/components/podcast/AudioWaveform";
 import TimelineEditor from "@/components/podcast/TimelineEditor";
 import ActorPresets from "@/components/podcast/ActorPresets";
+import BackgroundGenerator from "@/components/podcast/BackgroundGenerator";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
+import { smartAutoFill } from "@/components/podcast/audioAnalysis";
 import {
   Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
@@ -35,6 +37,7 @@ const PodcastAvatar = () => {
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
+  const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
   const playStartTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -165,6 +168,9 @@ const PodcastAvatar = () => {
   };
 
   const scene = BACKGROUND_SCENES.find((s) => s.id === selectedScene) || BACKGROUND_SCENES[6];
+  const stageBackground = customBackgroundUrl
+    ? `url(${customBackgroundUrl}) center/cover no-repeat`
+    : scene.gradient;
 
   const getActiveActorAtTime = useCallback((elapsedSec: number): number => {
     if (timelineSegments.length > 0) {
@@ -674,35 +680,42 @@ const PodcastAvatar = () => {
             isPlaying={isPlaying}
             waveformPeaks={waveformPeaks}
             onSeek={(time) => {
-              if (!isPlaying) {
-                setCurrentTime(time);
+              setCurrentTime(time);
+              // If playing, update the playback offset
+              if (isPlaying) {
+                playStartTimeRef.current = Date.now() - time * 1000;
+              }
+            }}
+            audioFile={audioFile}
+            onSmartAutoFill={async () => {
+              if (!audioFile) {
+                toast.error("Upload audio first for smart auto-fill");
+                return;
+              }
+              toast.info("Analyzing audio...");
+              try {
+                const segments = await smartAutoFill(audioFile, actors.length);
+                setTimelineSegments(segments);
+                toast.success(`Detected ${segments.length} speaking segments!`);
+              } catch (err) {
+                console.error(err);
+                toast.error("Failed to analyze audio");
               }
             }}
           />
 
 
-          <div className="glass-card p-6 space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Image className="w-5 h-5 text-primary" /> Background Scene
-            </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-              {BACKGROUND_SCENES.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedScene(s.id)}
-                  className={`rounded-xl p-3 text-center text-xs font-medium transition-all border-2 ${
-                    selectedScene === s.id
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-transparent hover:border-border"
-                  }`}
-                  style={{ background: s.gradient, color: "#fff", minHeight: 60 }}
-                >
-                  {s.emoji && <span className="text-lg block">{s.emoji}</span>}
-                  {s.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <BackgroundGenerator
+            selectedScene={selectedScene}
+            onSelectScene={(id) => {
+              setSelectedScene(id);
+              setCustomBackgroundUrl(null);
+            }}
+            onCustomBackground={(url) => {
+              setCustomBackgroundUrl(url);
+              setSelectedScene(""); // deselect presets
+            }}
+          />
 
           {/* Audio Upload & Music */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -804,7 +817,7 @@ const PodcastAvatar = () => {
             <div
               ref={stageRef}
               className="rounded-2xl p-8 flex flex-col items-center justify-center gap-4"
-              style={{ background: scene.gradient, minHeight: 340 }}
+              style={{ background: stageBackground, minHeight: 340 }}
             >
               <div className={`flex items-center justify-center flex-wrap ${actors.length <= 3 ? "gap-8 md:gap-16" : "gap-4 md:gap-8"}`}>
                 {actors.map((actor, i) => (

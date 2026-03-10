@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Actor, TimelineSegment } from "./types";
@@ -13,6 +13,8 @@ interface TimelineEditorProps {
   isPlaying: boolean;
   waveformPeaks?: number[];
   onSeek?: (time: number) => void;
+  audioFile?: File | null;
+  onSmartAutoFill?: () => void;
 }
 
 const COLORS = [
@@ -35,6 +37,8 @@ const TimelineEditor = ({
   isPlaying,
   waveformPeaks = [],
   onSeek,
+  audioFile,
+  onSmartAutoFill,
 }: TimelineEditorProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ segId: string; edge: "start" | "end" } | null>(null);
@@ -139,6 +143,11 @@ const TimelineEditor = ({
           <Clock className="w-5 h-5 text-primary" /> Speaker Timeline
         </h3>
         <div className="flex gap-2">
+          {audioFile && onSmartAutoFill && (
+            <Button variant="outline" size="sm" onClick={onSmartAutoFill}>
+              <Sparkles className="w-4 h-4 mr-1" /> Smart Fill
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={autoFill}>
             Auto-Fill
           </Button>
