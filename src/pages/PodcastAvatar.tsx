@@ -687,28 +687,17 @@ const PodcastAvatar = () => {
           />
 
 
-          <div className="glass-card p-6 space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Image className="w-5 h-5 text-primary" /> Background Scene
-            </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-              {BACKGROUND_SCENES.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedScene(s.id)}
-                  className={`rounded-xl p-3 text-center text-xs font-medium transition-all border-2 ${
-                    selectedScene === s.id
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-transparent hover:border-border"
-                  }`}
-                  style={{ background: s.gradient, color: "#fff", minHeight: 60 }}
-                >
-                  {s.emoji && <span className="text-lg block">{s.emoji}</span>}
-                  {s.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <BackgroundGenerator
+            selectedScene={selectedScene}
+            onSelectScene={(id) => {
+              setSelectedScene(id);
+              setCustomBackgroundUrl(null);
+            }}
+            onCustomBackground={(url) => {
+              setCustomBackgroundUrl(url);
+              setSelectedScene(""); // deselect presets
+            }}
+          />
 
           {/* Audio Upload & Music */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
