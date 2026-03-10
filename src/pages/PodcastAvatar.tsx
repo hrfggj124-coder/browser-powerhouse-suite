@@ -167,6 +167,9 @@ const PodcastAvatar = () => {
   };
 
   const scene = BACKGROUND_SCENES.find((s) => s.id === selectedScene) || BACKGROUND_SCENES[6];
+  const stageBackground = customBackgroundUrl
+    ? `url(${customBackgroundUrl}) center/cover no-repeat`
+    : scene.gradient;
 
   const getActiveActorAtTime = useCallback((elapsedSec: number): number => {
     if (timelineSegments.length > 0) {
