@@ -36,7 +36,7 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "news-anchor",
     name: "News Anchor",
     emoji: "📰",
-    actor: { name: "News Anchor", sex: "male", age: "adult", color: "hsl(var(--tool-resume))", speechBubble: "Breaking news..." },
+    actor: { name: "News Anchor", sex: "male", age: "adult", color: "hsl(var(--tool-resume))", speechBubble: "Breaking news...", mouthYOffset: 0 },
   },
   {
     id: "comedian",
