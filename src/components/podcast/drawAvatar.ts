@@ -26,12 +26,11 @@ export function drawAvatar(
     ctx.drawImage(img, cx - 70, cy - 80, 140, 140);
     ctx.restore();
 
-    // Draw mouth overlay that blends with the photo
-    // Position at lower third of face circle for natural lip placement
-    const photoMouthY = cy + 25;
+    // Draw mouth overlay using the user-configurable Y offset
+    const baseMouthY = cy + 25;
+    const photoMouthY = baseMouthY + (actor.mouthYOffset || 0);
     if (mouthOpenAmount > 1) {
       ctx.save();
-      // Clip mouth area to face circle so it doesn't overflow
       ctx.beginPath();
       ctx.arc(cx, cy - 10, 70, 0, Math.PI * 2);
       ctx.clip();
@@ -39,19 +38,16 @@ export function drawAvatar(
       const mouthW = 18 + mouthOpenAmount * 0.4;
       const mouthH = 2 + mouthOpenAmount * 0.8;
 
-      // Shadow behind mouth for depth
       ctx.beginPath();
       ctx.ellipse(cx, photoMouthY, mouthW + 2, Math.max(3, mouthH + 1), 0, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(0,0,0,0.3)";
       ctx.fill();
 
-      // Lip shape
       ctx.beginPath();
       ctx.ellipse(cx, photoMouthY, mouthW, Math.max(2, mouthH), 0, 0, Math.PI * 2);
       ctx.fillStyle = mouthOpenAmount > 5 ? "#8b2020" : "#a63030";
       ctx.fill();
 
-      // Inner mouth darkness
       if (mouthOpenAmount > 6) {
         ctx.beginPath();
         ctx.ellipse(cx, photoMouthY, mouthW * 0.6, mouthH * 0.5, 0, 0, Math.PI * 2);
@@ -59,7 +55,6 @@ export function drawAvatar(
         ctx.fill();
       }
 
-      // Upper lip line
       ctx.beginPath();
       ctx.moveTo(cx - mouthW, photoMouthY);
       ctx.quadraticCurveTo(cx, photoMouthY - mouthH * 0.3, cx + mouthW, photoMouthY);
@@ -104,10 +99,8 @@ export function drawAvatar(
     ctx.arc(cx + 18, eyeY - 1, 2, 0, Math.PI * 2);
     ctx.fillStyle = "#fff";
     ctx.fill();
-  }
 
-  // Mouth (only for non-image actors; image actors have mouth drawn in the image section)
-  if (!actor.imageUrl) {
+    // Mouth for non-image actors
     const mouthY = cy + 15;
     ctx.beginPath();
     const mouthWidth = 20 + mouthOpenAmount * 0.5;
@@ -153,13 +146,11 @@ export function drawAvatar(
     const bw = textWidth + padding * 2;
     const bh = 28;
 
-    // Bubble
     ctx.fillStyle = "rgba(255,255,255,0.95)";
     ctx.beginPath();
     ctx.roundRect(bubbleX - bw / 2, bubbleY - bh / 2, bw, bh, 8);
     ctx.fill();
 
-    // Tail
     ctx.beginPath();
     ctx.moveTo(bubbleX - 6, bubbleY + bh / 2);
     ctx.lineTo(bubbleX, bubbleY + bh / 2 + 10);
@@ -167,7 +158,6 @@ export function drawAvatar(
     ctx.fillStyle = "rgba(255,255,255,0.95)";
     ctx.fill();
 
-    // Text
     ctx.fillStyle = "#1a1a2e";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
