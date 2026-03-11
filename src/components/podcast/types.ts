@@ -60,7 +60,7 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "tech-host",
     name: "Tech Host",
     emoji: "💻",
-    actor: { name: "Tech Host", sex: "male", age: "young", color: "hsl(var(--tool-compress))", speechBubble: "Let's dive in!" },
+    actor: { name: "Tech Host", sex: "male", age: "young", color: "hsl(var(--tool-compress))", speechBubble: "Let's dive in!", mouthYOffset: 0 },
   },
   {
     id: "debate",
