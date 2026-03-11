@@ -66,7 +66,7 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "debate",
     name: "Debater",
     emoji: "⚖️",
-    actor: { name: "Debater", sex: "female", age: "adult", color: "hsl(var(--tool-weather))", speechBubble: "I disagree because..." },
+    actor: { name: "Debater", sex: "female", age: "adult", color: "hsl(var(--tool-weather))", speechBubble: "I disagree because...", mouthYOffset: 0 },
   },
 ];
 

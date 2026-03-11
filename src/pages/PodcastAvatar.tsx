@@ -75,6 +75,7 @@ const PodcastAvatar = () => {
         image: null,
         imageUrl: null,
         speechBubble: "",
+        mouthYOffset: 0,
       },
     ]);
   };
