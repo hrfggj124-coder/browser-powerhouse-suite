@@ -7,6 +7,7 @@ export interface Actor {
   image: File | null;
   imageUrl: string | null;
   speechBubble: string;
+  mouthYOffset: number; // -50 to 50, vertical mouth position adjustment for uploaded images
 }
 
 export interface TimelineSegment {
@@ -35,37 +36,37 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "news-anchor",
     name: "News Anchor",
     emoji: "📰",
-    actor: { name: "News Anchor", sex: "male", age: "adult", color: "hsl(var(--tool-resume))", speechBubble: "Breaking news..." },
+    actor: { name: "News Anchor", sex: "male", age: "adult", color: "hsl(var(--tool-resume))", speechBubble: "Breaking news...", mouthYOffset: 0 },
   },
   {
     id: "comedian",
     name: "Comedian",
     emoji: "😂",
-    actor: { name: "Comedian", sex: "male", age: "young", color: "hsl(var(--tool-convert))", speechBubble: "So here's the thing..." },
+    actor: { name: "Comedian", sex: "male", age: "young", color: "hsl(var(--tool-convert))", speechBubble: "So here's the thing...", mouthYOffset: 0 },
   },
   {
     id: "interviewer",
     name: "Interviewer",
     emoji: "🎤",
-    actor: { name: "Interviewer", sex: "female", age: "adult", color: "hsl(var(--primary))", speechBubble: "Tell me more..." },
+    actor: { name: "Interviewer", sex: "female", age: "adult", color: "hsl(var(--primary))", speechBubble: "Tell me more...", mouthYOffset: 0 },
   },
   {
     id: "storyteller",
     name: "Storyteller",
     emoji: "📖",
-    actor: { name: "Storyteller", sex: "female", age: "senior", color: "hsl(var(--tool-password))", speechBubble: "Once upon a time..." },
+    actor: { name: "Storyteller", sex: "female", age: "senior", color: "hsl(var(--tool-password))", speechBubble: "Once upon a time...", mouthYOffset: 0 },
   },
   {
     id: "tech-host",
     name: "Tech Host",
     emoji: "💻",
-    actor: { name: "Tech Host", sex: "male", age: "young", color: "hsl(var(--tool-compress))", speechBubble: "Let's dive in!" },
+    actor: { name: "Tech Host", sex: "male", age: "young", color: "hsl(var(--tool-compress))", speechBubble: "Let's dive in!", mouthYOffset: 0 },
   },
   {
     id: "debate",
     name: "Debater",
     emoji: "⚖️",
-    actor: { name: "Debater", sex: "female", age: "adult", color: "hsl(var(--tool-weather))", speechBubble: "I disagree because..." },
+    actor: { name: "Debater", sex: "female", age: "adult", color: "hsl(var(--tool-weather))", speechBubble: "I disagree because...", mouthYOffset: 0 },
   },
 ];
 
@@ -80,8 +81,8 @@ export const BACKGROUND_SCENES: BackgroundScene[] = [
 ];
 
 export const defaultActors: Actor[] = [
-  { id: "1", name: "Actor 1", sex: "male", age: "adult", color: "hsl(var(--primary))", image: null, imageUrl: null, speechBubble: "" },
-  { id: "2", name: "Actor 2", sex: "female", age: "adult", color: "hsl(var(--tool-compress))", image: null, imageUrl: null, speechBubble: "" },
+  { id: "1", name: "Actor 1", sex: "male", age: "adult", color: "hsl(var(--primary))", image: null, imageUrl: null, speechBubble: "", mouthYOffset: 0 },
+  { id: "2", name: "Actor 2", sex: "female", age: "adult", color: "hsl(var(--tool-compress))", image: null, imageUrl: null, speechBubble: "", mouthYOffset: 0 },
 ];
 
 export const AVATAR_SIZE = 200;

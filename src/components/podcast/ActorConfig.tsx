@@ -1,5 +1,6 @@
 import { Actor } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import FileUploadZone from "@/components/shared/FileUploadZone";
 
 interface ActorConfigProps {
@@ -89,6 +90,23 @@ const ActorConfig = ({ actor, index, onUpdate }: ActorConfigProps) => {
           description="PNG, JPG up to 5MB"
         />
       </div>
+
+      {/* Mouth Y offset – only visible when an image is uploaded */}
+      {actor.imageUrl && (
+        <div className="space-y-2">
+          <label className="text-sm text-muted-foreground">
+            Mouth Position Offset: {actor.mouthYOffset > 0 ? "+" : ""}{actor.mouthYOffset}px
+          </label>
+          <Slider
+            value={[actor.mouthYOffset]}
+            onValueChange={([v]) => onUpdate(index, { mouthYOffset: v })}
+            min={-50}
+            max={50}
+            step={1}
+          />
+          <p className="text-xs text-muted-foreground">Adjust vertically to align the mouth with the actor's lips.</p>
+        </div>
+      )}
     </div>
   );
 };
