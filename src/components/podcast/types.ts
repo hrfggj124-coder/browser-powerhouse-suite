@@ -54,7 +54,7 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "storyteller",
     name: "Storyteller",
     emoji: "📖",
-    actor: { name: "Storyteller", sex: "female", age: "senior", color: "hsl(var(--tool-password))", speechBubble: "Once upon a time..." },
+    actor: { name: "Storyteller", sex: "female", age: "senior", color: "hsl(var(--tool-password))", speechBubble: "Once upon a time...", mouthYOffset: 0 },
   },
   {
     id: "tech-host",
