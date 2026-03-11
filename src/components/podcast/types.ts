@@ -81,8 +81,8 @@ export const BACKGROUND_SCENES: BackgroundScene[] = [
 ];
 
 export const defaultActors: Actor[] = [
-  { id: "1", name: "Actor 1", sex: "male", age: "adult", color: "hsl(var(--primary))", image: null, imageUrl: null, speechBubble: "" },
-  { id: "2", name: "Actor 2", sex: "female", age: "adult", color: "hsl(var(--tool-compress))", image: null, imageUrl: null, speechBubble: "" },
+  { id: "1", name: "Actor 1", sex: "male", age: "adult", color: "hsl(var(--primary))", image: null, imageUrl: null, speechBubble: "", mouthYOffset: 0 },
+  { id: "2", name: "Actor 2", sex: "female", age: "adult", color: "hsl(var(--tool-compress))", image: null, imageUrl: null, speechBubble: "", mouthYOffset: 0 },
 ];
 
 export const AVATAR_SIZE = 200;
