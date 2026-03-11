@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen, Captions, Settings } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import ActorConfig from "@/components/podcast/ActorConfig";
 import AudioWaveform from "@/components/podcast/AudioWaveform";
 import TimelineEditor from "@/components/podcast/TimelineEditor";
@@ -19,6 +20,12 @@ import {
   Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
+const RESOLUTION_PRESETS = [
+  { label: "480p", width: 854, height: 480 },
+  { label: "720p", width: 1280, height: 720 },
+  { label: "1080p", width: 1920, height: 1080 },
+];
+
 const PodcastAvatar = () => {
   const [actors, setActors] = useState<Actor[]>(defaultActors);
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -29,6 +36,8 @@ const PodcastAvatar = () => {
   const [mouthOpen, setMouthOpen] = useState(0);
   const [selectedScene, setSelectedScene] = useState("default");
   const [showWaveform, setShowWaveform] = useState(true);
+  const [showCaptions, setShowCaptions] = useState(true);
+  const [captionText, setCaptionText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -38,6 +47,7 @@ const PodcastAvatar = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
+  const [exportResolution, setExportResolution] = useState("720p");
   const playStartTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -138,7 +148,6 @@ const PodcastAvatar = () => {
         }
         peaks.push(max);
       }
-      // Normalize
       const peakMax = Math.max(...peaks, 0.01);
       setWaveformPeaks(peaks.map((p) => p / peakMax));
     } catch {
@@ -150,7 +159,6 @@ const PodcastAvatar = () => {
     if (files.length > 0) {
       setAudioFile(files[0]);
       generateWaveformPeaks(files[0]);
-      // Detect duration
       const tempAudio = new Audio(URL.createObjectURL(files[0]));
       tempAudio.addEventListener("loadedmetadata", () => {
         if (isFinite(tempAudio.duration)) {
@@ -180,9 +188,22 @@ const PodcastAvatar = () => {
       );
       if (seg) return seg.actorIndex % actors.length;
     }
-    // Fallback: auto-alternate every 4 seconds
     return Math.floor(elapsedSec / 4) % actors.length;
   }, [timelineSegments, actors.length]);
+
+  // Get caption text for the active actor at current time
+  const getCaptionForTime = useCallback((elapsedSec: number): string => {
+    if (timelineSegments.length === 0) return "";
+    const seg = timelineSegments.find(
+      (s) => elapsedSec >= s.startTime && elapsedSec < s.endTime
+    );
+    if (!seg) return "";
+    const actor = actors[seg.actorIndex % actors.length];
+    if (!actor) return "";
+    return actor.speechBubble
+      ? `${actor.name}: "${actor.speechBubble}"`
+      : `${actor.name} is speaking...`;
+  }, [timelineSegments, actors]);
 
   const animate = useCallback(() => {
     if (!analyserRef.current) return;
@@ -200,6 +221,11 @@ const PodcastAvatar = () => {
     const actorIdx = getActiveActorAtTime(elapsed);
     setActiveActor(actorIdx);
 
+    // Update caption
+    if (showCaptions) {
+      setCaptionText(getCaptionForTime(elapsed));
+    }
+
     canvasRefs.current.forEach((canvas, i) => {
       if (canvas) {
         const isActive = i === actorIdx;
@@ -209,11 +235,12 @@ const PodcastAvatar = () => {
     });
 
     animFrameRef.current = requestAnimationFrame(animate);
-  }, [actors, getActiveActorAtTime]);
+  }, [actors, getActiveActorAtTime, getCaptionForTime, showCaptions]);
 
   const stopPlayback = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    setCaptionText("");
     cancelAnimationFrame(animFrameRef.current);
     setMouthOpen(0);
     try { musicSourceRef.current?.stop(); } catch { /* already stopped */ }
@@ -249,7 +276,6 @@ const PodcastAvatar = () => {
       analyser.connect(audioCtx.destination);
       analyserRef.current = analyser;
 
-      // Background music
       if (musicFile) {
         const musicBuffer = await musicFile.arrayBuffer();
         const musicAudioBuffer = await audioCtx.decodeAudioData(musicBuffer);
@@ -280,17 +306,14 @@ const PodcastAvatar = () => {
     }
   };
 
-  // Update music volume live
   useEffect(() => {
     if (musicGainRef.current) {
       musicGainRef.current.gain.value = musicVolume / 100;
     }
   }, [musicVolume]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Ignore when typing in input/textarea
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
@@ -310,7 +333,31 @@ const PodcastAvatar = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [isPlaying, isRecording, audioFile, isExporting]);
 
-  // Export as video using canvas capture
+  // Draw captions onto a canvas context
+  const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string) => {
+    if (!text) return;
+    const fontSize = Math.max(14, Math.floor(canvasWidth / 45));
+    ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+    const textMetrics = ctx.measureText(text);
+    const padding = 12;
+    const bgWidth = Math.min(textMetrics.width + padding * 2, canvasWidth - 20);
+    const bgHeight = fontSize + padding * 2;
+    const bgX = (canvasWidth - bgWidth) / 2;
+    const bgY = canvasHeight - bgHeight - 20;
+
+    // Semi-transparent background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+    ctx.beginPath();
+    ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 8);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, canvasWidth / 2, bgY + bgHeight / 2, bgWidth - padding * 2);
+  };
+
   const exportVideo = async () => {
     if (!audioFile) {
       toast.error("Upload audio first to export");
@@ -318,18 +365,17 @@ const PodcastAvatar = () => {
     }
 
     setIsExporting(true);
-    toast.info("Exporting video... This may take a moment.");
+    const res = RESOLUTION_PRESETS.find((r) => r.label === exportResolution) || RESOLUTION_PRESETS[1];
+    toast.info(`Exporting ${res.label} video... This may take a moment.`);
 
     try {
-      // Create an offscreen canvas for compositing
       const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = 640;
-      exportCanvas.height = 360;
+      exportCanvas.width = res.width;
+      exportCanvas.height = res.height;
       const ctx = exportCanvas.getContext("2d")!;
 
       const stream = exportCanvas.captureStream(30);
 
-      // Add audio to the stream
       const audioCtx = new AudioContext();
       const arrayBuffer = await audioFile.arrayBuffer();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -342,7 +388,6 @@ const PodcastAvatar = () => {
       analyser.connect(dest);
       analyser.connect(audioCtx.destination);
 
-      // Music track
       let musicSource2: AudioBufferSourceNode | null = null;
       if (musicFile) {
         const mb = await musicFile.arrayBuffer();
@@ -367,15 +412,26 @@ const PodcastAvatar = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "podcast-avatar.webm";
+        a.download = `podcast-avatar-${res.label}.webm`;
         a.click();
         URL.revokeObjectURL(url);
         audioCtx.close();
         setIsExporting(false);
-        toast.success("Video exported!");
+        toast.success(`Video exported at ${res.label}!`);
       };
 
-      // Animation loop for export
+      // Load background image if custom
+      let bgImage: HTMLImageElement | null = null;
+      if (customBackgroundUrl) {
+        bgImage = new Image();
+        bgImage.crossOrigin = "anonymous";
+        bgImage.src = customBackgroundUrl;
+        await new Promise<void>((resolve) => {
+          bgImage!.onload = () => resolve();
+          bgImage!.onerror = () => resolve();
+        });
+      }
+
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       let running = true;
       const exportStartTime = Date.now();
@@ -391,32 +447,58 @@ const PodcastAvatar = () => {
         const actorIdx = getActiveActorAtTime(elapsed);
 
         // Background
-        const gradient = ctx.createLinearGradient(0, 0, 0, exportCanvas.height);
-        gradient.addColorStop(0, "#1a1a2e");
-        gradient.addColorStop(1, "#0f0f1a");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
+          // Draw background image covering the entire canvas
+          const imgRatio = bgImage.naturalWidth / bgImage.naturalHeight;
+          const canvasRatio = exportCanvas.width / exportCanvas.height;
+          let sx = 0, sy = 0, sw = bgImage.naturalWidth, sh = bgImage.naturalHeight;
+          if (imgRatio > canvasRatio) {
+            sw = bgImage.naturalHeight * canvasRatio;
+            sx = (bgImage.naturalWidth - sw) / 2;
+          } else {
+            sh = bgImage.naturalWidth / canvasRatio;
+            sy = (bgImage.naturalHeight - sh) / 2;
+          }
+          ctx.drawImage(bgImage, sx, sy, sw, sh, 0, 0, exportCanvas.width, exportCanvas.height);
+        } else {
+          const gradient = ctx.createLinearGradient(0, 0, 0, exportCanvas.height);
+          gradient.addColorStop(0, "#1a1a2e");
+          gradient.addColorStop(1, "#0f0f1a");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        }
 
-        // Draw each actor onto export canvas
+        // Draw actors centered in the lower portion of the screen
+        const avatarScale = Math.min(1, exportCanvas.width / (actors.length * (AVATAR_SIZE + 40)));
+        const scaledSize = Math.floor(AVATAR_SIZE * Math.max(0.6, avatarScale));
         const spacing = exportCanvas.width / (actors.length + 1);
+        const actorY = exportCanvas.height * 0.3;
+
         actors.forEach((actor, i) => {
           const tmpCanvas = document.createElement("canvas");
-          tmpCanvas.width = AVATAR_SIZE;
-          tmpCanvas.height = AVATAR_SIZE + 40;
+          tmpCanvas.width = scaledSize;
+          tmpCanvas.height = scaledSize + 40;
           const isActive = i === actorIdx;
           const mouth = isActive ? mouthVal : Math.max(0, mouthVal * 0.1);
           drawAvatar(tmpCanvas, actor, mouth, isActive);
-          const x = spacing * (i + 1) - AVATAR_SIZE / 2;
-          const y = (exportCanvas.height - AVATAR_SIZE - 40) / 2;
-          ctx.drawImage(tmpCanvas, x, y);
+          const x = spacing * (i + 1) - scaledSize / 2;
+          ctx.drawImage(tmpCanvas, x, actorY);
         });
 
         // Waveform bar at bottom
-        const barWidth = exportCanvas.width / 64;
-        for (let i = 0; i < 64; i++) {
-          const barHeight = (dataArray[i * Math.floor(dataArray.length / 64)] / 255) * 40;
-          ctx.fillStyle = "rgba(139, 92, 246, 0.5)";
-          ctx.fillRect(i * barWidth, exportCanvas.height - barHeight, barWidth - 1, barHeight);
+        if (showWaveform) {
+          const barWidth = exportCanvas.width / 64;
+          for (let i = 0; i < 64; i++) {
+            const barHeight = (dataArray[i * Math.floor(dataArray.length / 64)] / 255) * 40;
+            ctx.fillStyle = "rgba(139, 92, 246, 0.5)";
+            ctx.fillRect(i * barWidth, exportCanvas.height - barHeight, barWidth - 1, barHeight);
+          }
+        }
+
+        // Captions
+        if (showCaptions) {
+          const caption = getCaptionForTime(elapsed);
+          drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption);
         }
 
         requestAnimationFrame(drawFrame);
@@ -439,7 +521,6 @@ const PodcastAvatar = () => {
     }
   };
 
-  // Download combined audio (voice + music)
   const downloadAudio = async () => {
     if (!audioFile) {
       toast.error("No audio to download");
@@ -447,7 +528,6 @@ const PodcastAvatar = () => {
     }
 
     if (!musicFile) {
-      // Just download the voice
       const url = URL.createObjectURL(audioFile);
       const a = document.createElement("a");
       a.href = url;
@@ -460,29 +540,14 @@ const PodcastAvatar = () => {
 
     toast.info("Mixing audio...");
     try {
-      const audioCtx = new OfflineAudioContext(2, 44100 * 300, 44100);
-      const voiceBuf = await audioCtx.decodeAudioData(await audioFile.arrayBuffer());
-      const musicBuf = await audioCtx.decodeAudioData(await musicFile.arrayBuffer());
+      const voiceBuf = await (new OfflineAudioContext(2, 44100 * 300, 44100)).decodeAudioData(await audioFile.arrayBuffer());
 
-      const voiceSrc = audioCtx.createBufferSource();
-      voiceSrc.buffer = voiceBuf;
-      voiceSrc.connect(audioCtx.destination);
-
-      const musicSrc = audioCtx.createBufferSource();
-      musicSrc.buffer = musicBuf;
-      const gain = audioCtx.createGain();
-      gain.gain.value = musicVolume / 100;
-      musicSrc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      voiceSrc.start();
-      musicSrc.start();
-
-      // Render only the duration of the voice
       const offline = new OfflineAudioContext(2, voiceBuf.length, voiceBuf.sampleRate);
       const v2 = offline.createBufferSource();
       v2.buffer = voiceBuf;
       v2.connect(offline.destination);
+
+      const musicBuf = await offline.decodeAudioData(await musicFile.arrayBuffer());
       const m2 = offline.createBufferSource();
       m2.buffer = musicBuf;
       const g2 = offline.createGain();
@@ -493,8 +558,6 @@ const PodcastAvatar = () => {
       m2.start();
 
       const rendered = await offline.startRendering();
-
-      // Convert to WAV
       const wavBlob = audioBufferToWav(rendered);
       const url = URL.createObjectURL(wavBlob);
       const a = document.createElement("a");
@@ -521,7 +584,6 @@ const PodcastAvatar = () => {
     toast.success(`Applied "${preset.name}" to Actor ${targetIndex + 1}`);
   };
 
-  // Export project as JSON
   const exportProject = () => {
     const project = {
       version: 1,
@@ -530,6 +592,7 @@ const PodcastAvatar = () => {
       selectedScene,
       musicVolume,
       showWaveform,
+      showCaptions,
       audioDuration,
     };
     const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
@@ -542,7 +605,6 @@ const PodcastAvatar = () => {
     toast.success("Project exported");
   };
 
-  // Import project from JSON
   const importProject = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -562,12 +624,14 @@ const PodcastAvatar = () => {
             ...a,
             image: null,
             imageUrl: null,
+            mouthYOffset: a.mouthYOffset ?? 0,
           }))
         );
         if (project.timelineSegments) setTimelineSegments(project.timelineSegments);
         if (project.selectedScene) setSelectedScene(project.selectedScene);
         if (project.musicVolume !== undefined) setMusicVolume(project.musicVolume);
         if (project.showWaveform !== undefined) setShowWaveform(project.showWaveform);
+        if (project.showCaptions !== undefined) setShowCaptions(project.showCaptions);
         if (project.audioDuration) setAudioDuration(project.audioDuration);
         toast.success("Project imported! Re-upload audio/music files to continue.");
       } catch {
@@ -589,7 +653,7 @@ const PodcastAvatar = () => {
       <div className="container mx-auto px-4 py-8">
         <ToolHeader
           title="Podcast Avatar"
-          description="Create animated talking avatars for podcasts with background music, waveforms, and video export."
+          description="Create animated talking avatars for podcasts with background music, waveforms, captions, and video export."
           icon={Users}
           color="--tool-podcast"
         />
@@ -682,7 +746,6 @@ const PodcastAvatar = () => {
             waveformPeaks={waveformPeaks}
             onSeek={(time) => {
               setCurrentTime(time);
-              // If playing, update the playback offset
               if (isPlaying) {
                 playStartTimeRef.current = Date.now() - time * 1000;
               }
@@ -705,7 +768,6 @@ const PodcastAvatar = () => {
             }}
           />
 
-
           <BackgroundGenerator
             selectedScene={selectedScene}
             onSelectScene={(id) => {
@@ -714,7 +776,7 @@ const PodcastAvatar = () => {
             }}
             onCustomBackground={(url) => {
               setCustomBackgroundUrl(url);
-              setSelectedScene(""); // deselect presets
+              setSelectedScene("");
             }}
           />
 
@@ -794,7 +856,12 @@ const PodcastAvatar = () => {
           <div className="glass-card p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold text-lg">Preview Stage</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex items-center gap-2">
+                  <Captions className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Captions</span>
+                  <Switch checked={showCaptions} onCheckedChange={setShowCaptions} />
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -817,8 +884,8 @@ const PodcastAvatar = () => {
 
             <div
               ref={stageRef}
-              className="rounded-2xl p-8 flex flex-col items-center justify-center gap-4"
-              style={{ background: stageBackground, minHeight: 340 }}
+              className="relative rounded-2xl p-8 flex flex-col items-center justify-center gap-4 overflow-hidden"
+              style={{ background: stageBackground, minHeight: 340, aspectRatio: "16/9" }}
             >
               <div className={`flex items-center justify-center flex-wrap ${actors.length <= 3 ? "gap-8 md:gap-16" : "gap-4 md:gap-8"}`}>
                 {actors.map((actor, i) => (
@@ -839,16 +906,39 @@ const PodcastAvatar = () => {
                   isPlaying={isPlaying}
                 />
               )}
+
+              {/* Live captions overlay */}
+              {showCaptions && captionText && isPlaying && (
+                <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
+                  <div className="bg-black/75 text-white px-4 py-2 rounded-lg text-sm font-medium max-w-[80%] text-center">
+                    {captionText}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Export actions */}
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center items-center">
               <Button variant="outline" onClick={downloadAudio} disabled={!audioFile}>
                 <Download className="w-4 h-4 mr-2" /> Download Audio
               </Button>
-              <Button variant="outline" onClick={exportVideo} disabled={!audioFile || isExporting}>
-                <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : "Export Video (.webm)"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={exportResolution} onValueChange={setExportResolution}>
+                  <SelectTrigger className="w-24 h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RESOLUTION_PRESETS.map((r) => (
+                      <SelectItem key={r.label} value={r.label}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={exportVideo} disabled={!audioFile || isExporting}>
+                  <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : "Export Video (.webm)"}
+                </Button>
+              </div>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
@@ -870,7 +960,7 @@ const PodcastAvatar = () => {
 function audioBufferToWav(buffer: AudioBuffer): Blob {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
-  const format = 1; // PCM
+  const format = 1;
   const bitDepth = 16;
   const bytesPerSample = bitDepth / 8;
   const blockAlign = numChannels * bytesPerSample;
