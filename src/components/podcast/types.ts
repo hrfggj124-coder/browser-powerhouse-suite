@@ -7,6 +7,7 @@ export interface Actor {
   image: File | null;
   imageUrl: string | null;
   speechBubble: string;
+  mouthYOffset: number; // -50 to 50, vertical mouth position adjustment for uploaded images
 }
 
 export interface TimelineSegment {
