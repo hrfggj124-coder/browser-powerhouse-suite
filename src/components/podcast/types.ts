@@ -48,7 +48,7 @@ export const ACTOR_PRESETS: ActorPreset[] = [
     id: "interviewer",
     name: "Interviewer",
     emoji: "🎤",
-    actor: { name: "Interviewer", sex: "female", age: "adult", color: "hsl(var(--primary))", speechBubble: "Tell me more..." },
+    actor: { name: "Interviewer", sex: "female", age: "adult", color: "hsl(var(--primary))", speechBubble: "Tell me more...", mouthYOffset: 0 },
   },
   {
     id: "storyteller",
