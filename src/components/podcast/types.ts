@@ -7,14 +7,27 @@ export interface Actor {
   image: File | null;
   imageUrl: string | null;
   speechBubble: string;
-  mouthYOffset: number; // -50 to 50, vertical mouth position adjustment for uploaded images
+  mouthYOffset: number;
+}
+
+export interface TranscriptionWord {
+  text: string;
+  start: number;
+  end: number;
+  speaker?: string;
+}
+
+export interface TranscriptionResult {
+  text: string;
+  words: TranscriptionWord[];
 }
 
 export interface TimelineSegment {
   id: string;
   actorIndex: number;
-  startTime: number; // seconds
-  endTime: number;   // seconds
+  startTime: number;
+  endTime: number;
+  transcript?: string; // real words for this segment
 }
 
 export interface ActorPreset {
