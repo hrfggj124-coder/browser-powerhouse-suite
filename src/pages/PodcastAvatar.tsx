@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen, Captions, Settings } from "lucide-react";
+import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen, Captions, Settings, Sparkles, Loader2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ToolHeader from "@/components/shared/ToolHeader";
 import FileUploadZone from "@/components/shared/FileUploadZone";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -15,15 +16,24 @@ import TimelineEditor from "@/components/podcast/TimelineEditor";
 import ActorPresets from "@/components/podcast/ActorPresets";
 import BackgroundGenerator from "@/components/podcast/BackgroundGenerator";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
-import { smartAutoFill } from "@/components/podcast/audioAnalysis";
+import { smartAutoFill, buildTimelineFromTranscription } from "@/components/podcast/audioAnalysis";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  Actor, ActorPreset, TimelineSegment, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
+  Actor, ActorPreset, TimelineSegment, TranscriptionResult, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
 const RESOLUTION_PRESETS = [
   { label: "480p", width: 854, height: 480 },
   { label: "720p", width: 1280, height: 720 },
   { label: "1080p", width: 1920, height: 1080 },
+];
+
+const MUSIC_PRESETS = [
+  { label: "Chill Podcast", prompt: "Calm lo-fi background music for a podcast, soft beats, ambient" },
+  { label: "News Theme", prompt: "Professional news broadcast background music, serious, corporate" },
+  { label: "Upbeat Talk", prompt: "Upbeat cheerful background music for a talk show, positive vibes" },
+  { label: "Tech Review", prompt: "Modern electronic background music for a tech review podcast" },
+  { label: "Storytelling", prompt: "Gentle ambient music for storytelling, emotional, cinematic" },
 ];
 
 const PodcastAvatar = () => {
@@ -48,6 +58,10 @@ const PodcastAvatar = () => {
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
   const [exportResolution, setExportResolution] = useState("720p");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcription, setTranscription] = useState<TranscriptionResult | null>(null);
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [musicPrompt, setMusicPrompt] = useState("");
   const playStartTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -176,6 +190,112 @@ const PodcastAvatar = () => {
     }
   };
 
+  // Transcribe audio using ElevenLabs STT
+  const transcribeAudio = async () => {
+    if (!audioFile) {
+      toast.error("Upload audio first");
+      return;
+    }
+
+    setIsTranscribing(true);
+    toast.info("Transcribing audio with AI... This may take a moment.");
+
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioFile);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
+        {
+          method: "POST",
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Transcription failed");
+      }
+
+      const result: TranscriptionResult = await response.json();
+      setTranscription(result);
+
+      // Auto-build timeline from transcription with diarization
+      const segments = buildTimelineFromTranscription(result, actors.length);
+      if (segments.length > 0) {
+        setTimelineSegments(segments);
+        toast.success(`Transcribed! ${segments.length} speaking segments detected with real captions.`);
+      } else {
+        toast.success("Transcription complete! Use Smart Fill for timeline.");
+      }
+    } catch (err: any) {
+      console.error("Transcription error:", err);
+      if (err.message?.includes("429")) {
+        toast.error("Rate limited. Try again later.");
+      } else {
+        toast.error(err.message || "Transcription failed");
+      }
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  // Generate background music with AI
+  const generateMusic = async (prompt: string) => {
+    setIsGeneratingMusic(true);
+    toast.info("Generating background music with AI...");
+
+    try {
+      const duration = audioDuration > 0 ? Math.min(Math.ceil(audioDuration), 120) : 30;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-music`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ prompt, duration }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Music generation failed");
+      }
+
+      const data = await response.json();
+      if (data.audioContent) {
+        // Convert base64 to File
+        const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+        const resp = await fetch(audioUrl);
+        const blob = await resp.blob();
+        const file = new File([blob], "ai-music.mp3", { type: "audio/mpeg" });
+        setMusicFile(file);
+        // Auto-set music volume lower for podcast
+        setMusicVolume(20);
+        toast.success("Background music generated and auto-adjusted!");
+      }
+    } catch (err: any) {
+      console.error("Music generation error:", err);
+      if (err.message?.includes("429")) {
+        toast.error("Rate limited. Try again later.");
+      } else if (err.message?.includes("402")) {
+        toast.error("Insufficient credits for music generation.");
+      } else {
+        toast.error(err.message || "Music generation failed");
+      }
+    } finally {
+      setIsGeneratingMusic(false);
+    }
+  };
+
   const scene = BACKGROUND_SCENES.find((s) => s.id === selectedScene) || BACKGROUND_SCENES[6];
   const stageBackground = customBackgroundUrl
     ? `url(${customBackgroundUrl}) center/cover no-repeat`
@@ -191,7 +311,7 @@ const PodcastAvatar = () => {
     return Math.floor(elapsedSec / 4) % actors.length;
   }, [timelineSegments, actors.length]);
 
-  // Get caption text for the active actor at current time
+  // Get caption text - prefer transcript, fall back to speech bubble
   const getCaptionForTime = useCallback((elapsedSec: number): string => {
     if (timelineSegments.length === 0) return "";
     const seg = timelineSegments.find(
@@ -200,6 +320,11 @@ const PodcastAvatar = () => {
     if (!seg) return "";
     const actor = actors[seg.actorIndex % actors.length];
     if (!actor) return "";
+
+    // Use real transcript if available
+    if (seg.transcript) {
+      return `${actor.name}: "${seg.transcript}"`;
+    }
     return actor.speechBubble
       ? `${actor.name}: "${actor.speechBubble}"`
       : `${actor.name} is speaking...`;
@@ -221,7 +346,6 @@ const PodcastAvatar = () => {
     const actorIdx = getActiveActorAtTime(elapsed);
     setActiveActor(actorIdx);
 
-    // Update caption
     if (showCaptions) {
       setCaptionText(getCaptionForTime(elapsed));
     }
@@ -333,7 +457,6 @@ const PodcastAvatar = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [isPlaying, isRecording, audioFile, isExporting]);
 
-  // Draw captions onto a canvas context
   const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string) => {
     if (!text) return;
     const fontSize = Math.max(14, Math.floor(canvasWidth / 45));
@@ -345,13 +468,11 @@ const PodcastAvatar = () => {
     const bgX = (canvasWidth - bgWidth) / 2;
     const bgY = canvasHeight - bgHeight - 20;
 
-    // Semi-transparent background
     ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
     ctx.beginPath();
     ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 8);
     ctx.fill();
 
-    // Text
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -420,7 +541,6 @@ const PodcastAvatar = () => {
         toast.success(`Video exported at ${res.label}!`);
       };
 
-      // Load background image if custom
       let bgImage: HTMLImageElement | null = null;
       if (customBackgroundUrl) {
         bgImage = new Image();
@@ -448,7 +568,6 @@ const PodcastAvatar = () => {
 
         // Background
         if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
-          // Draw background image covering the entire canvas
           const imgRatio = bgImage.naturalWidth / bgImage.naturalHeight;
           const canvasRatio = exportCanvas.width / exportCanvas.height;
           let sx = 0, sy = 0, sw = bgImage.naturalWidth, sh = bgImage.naturalHeight;
@@ -468,7 +587,7 @@ const PodcastAvatar = () => {
           ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
         }
 
-        // Draw actors centered in the lower portion of the screen
+        // Draw actors
         const avatarScale = Math.min(1, exportCanvas.width / (actors.length * (AVATAR_SIZE + 40)));
         const scaledSize = Math.floor(AVATAR_SIZE * Math.max(0.6, avatarScale));
         const spacing = exportCanvas.width / (actors.length + 1);
@@ -485,7 +604,7 @@ const PodcastAvatar = () => {
           ctx.drawImage(tmpCanvas, x, actorY);
         });
 
-        // Waveform bar at bottom
+        // Waveform
         if (showWaveform) {
           const barWidth = exportCanvas.width / 64;
           for (let i = 0; i < 64; i++) {
@@ -541,12 +660,10 @@ const PodcastAvatar = () => {
     toast.info("Mixing audio...");
     try {
       const voiceBuf = await (new OfflineAudioContext(2, 44100 * 300, 44100)).decodeAudioData(await audioFile.arrayBuffer());
-
       const offline = new OfflineAudioContext(2, voiceBuf.length, voiceBuf.sampleRate);
       const v2 = offline.createBufferSource();
       v2.buffer = voiceBuf;
       v2.connect(offline.destination);
-
       const musicBuf = await offline.decodeAudioData(await musicFile.arrayBuffer());
       const m2 = offline.createBufferSource();
       m2.buffer = musicBuf;
@@ -556,7 +673,6 @@ const PodcastAvatar = () => {
       g2.connect(offline.destination);
       v2.start();
       m2.start();
-
       const rendered = await offline.startRendering();
       const wavBlob = audioBufferToWav(rendered);
       const url = URL.createObjectURL(wavBlob);
@@ -653,7 +769,7 @@ const PodcastAvatar = () => {
       <div className="container mx-auto px-4 py-8">
         <ToolHeader
           title="Podcast Avatar"
-          description="Create animated talking avatars for podcasts with background music, waveforms, captions, and video export."
+          description="Create animated talking avatars for podcasts with AI transcription, background music generation, waveforms, captions, and video export."
           icon={Users}
           color="--tool-podcast"
         />
@@ -756,17 +872,46 @@ const PodcastAvatar = () => {
                 toast.error("Upload audio first for smart auto-fill");
                 return;
               }
-              toast.info("Analyzing audio...");
+              toast.info("Analyzing audio with pitch detection...");
               try {
                 const segments = await smartAutoFill(audioFile, actors.length);
                 setTimelineSegments(segments);
-                toast.success(`Detected ${segments.length} speaking segments!`);
+                toast.success(`Detected ${segments.length} speaking segments with speaker clustering!`);
               } catch (err) {
                 console.error(err);
                 toast.error("Failed to analyze audio");
               }
             }}
           />
+
+          {/* AI Transcription */}
+          {audioFile && (
+            <div className="glass-card p-6 space-y-3">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Captions className="w-5 h-5 text-primary" /> AI Transcription & Smart Captions
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Transcribe your audio with AI to get real captions and automatic speaker detection. This replaces static speech bubble text with actual spoken words.
+              </p>
+              <Button
+                onClick={transcribeAudio}
+                disabled={isTranscribing}
+                className="btn-primary-gradient"
+              >
+                {isTranscribing ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Transcribing...</>
+                ) : (
+                  <><Sparkles className="w-4 h-4 mr-2" /> Transcribe Audio with AI</>
+                )}
+              </Button>
+              {transcription && (
+                <div className="bg-secondary/30 rounded-lg p-3 max-h-32 overflow-auto">
+                  <p className="text-xs text-muted-foreground mb-1">Transcript preview:</p>
+                  <p className="text-sm">{transcription.text.slice(0, 500)}{transcription.text.length > 500 ? "..." : ""}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <BackgroundGenerator
             selectedScene={selectedScene}
@@ -820,16 +965,61 @@ const PodcastAvatar = () => {
 
             <div className="glass-card p-6 space-y-4">
               <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Music className="w-5 h-5 text-primary" /> Background Music (optional)
+                <Music className="w-5 h-5 text-primary" /> Background Music
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Add royalty-free instrumental music. Use sites like Pixabay, FreePD, or Incompetech for non-copyright music.
-              </p>
+
+              {/* AI Music Generation */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Generate music with AI or upload your own
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {MUSIC_PRESETS.map((preset) => (
+                    <Button
+                      key={preset.label}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => generateMusic(preset.prompt)}
+                      disabled={isGeneratingMusic}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (musicPrompt.trim()) {
+                      generateMusic(musicPrompt.trim());
+                      setMusicPrompt("");
+                    }
+                  }}
+                  className="flex gap-2"
+                >
+                  <Input
+                    value={musicPrompt}
+                    onChange={(e) => setMusicPrompt(e.target.value)}
+                    placeholder="Describe your music..."
+                    className="flex-1 h-8 text-xs"
+                    disabled={isGeneratingMusic}
+                  />
+                  <Button type="submit" size="sm" className="h-8" disabled={isGeneratingMusic || !musicPrompt.trim()}>
+                    {isGeneratingMusic ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  </Button>
+                </form>
+                {isGeneratingMusic && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Generating music...
+                  </p>
+                )}
+              </div>
+
               <FileUploadZone
                 accept="audio/*"
                 maxSize={50}
                 onFilesSelected={handleMusicSelected}
-                label="Upload background music"
+                label="Or upload background music"
                 description="MP3, WAV up to 50MB"
               />
               {musicFile && (
