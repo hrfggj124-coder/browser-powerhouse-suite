@@ -2,3 +2,12 @@ project_id = "utosbuvhjxcblhcudeih"
 
 [functions.generate-background]
 verify_jwt = false
+
+[functions.generate-avatar]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false
+
+[functions.generate-music]
+verify_jwt = false
