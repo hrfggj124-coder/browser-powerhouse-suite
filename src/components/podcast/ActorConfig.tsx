@@ -1,6 +1,11 @@
 import { Actor } from "./types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import FileUploadZone from "@/components/shared/FileUploadZone";
 
 interface ActorConfigProps {
@@ -10,10 +15,54 @@ interface ActorConfigProps {
 }
 
 const ActorConfig = ({ actor, index, onUpdate }: ActorConfigProps) => {
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+
   const handleImageUpload = (files: File[]) => {
     if (files.length > 0) {
       const url = URL.createObjectURL(files[0]);
       onUpdate(index, { image: files[0], imageUrl: url });
+    }
+  };
+
+  const generateCartoonAvatar = async () => {
+    if (!actor.image) {
+      toast.error("Upload a photo first to generate a cartoon avatar");
+      return;
+    }
+
+    setIsGeneratingAvatar(true);
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(actor.image!);
+      });
+
+      const { data, error } = await supabase.functions.invoke("generate-avatar", {
+        body: { imageBase64: base64, style: "cartoon podcast character" },
+      });
+
+      if (error) throw error;
+
+      if (data?.imageUrl) {
+        onUpdate(index, { imageUrl: data.imageUrl });
+        toast.success("Cartoon avatar generated!");
+      } else {
+        throw new Error("No image returned");
+      }
+    } catch (err: any) {
+      console.error("Avatar generation error:", err);
+      if (err?.message?.includes("429")) {
+        toast.error("Rate limited. Try again in a moment.");
+      } else if (err?.message?.includes("402")) {
+        toast.error("AI usage limit reached.");
+      } else {
+        toast.error("Failed to generate avatar. Try again.");
+      }
+    } finally {
+      setIsGeneratingAvatar(false);
     }
   };
 
@@ -91,7 +140,24 @@ const ActorConfig = ({ actor, index, onUpdate }: ActorConfigProps) => {
         />
       </div>
 
-      {/* Mouth Y offset – only visible when an image is uploaded */}
+      {/* AI Avatar Generation */}
+      {actor.image && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={generateCartoonAvatar}
+          disabled={isGeneratingAvatar}
+          className="w-full"
+        >
+          {isGeneratingAvatar ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating Cartoon Avatar...</>
+          ) : (
+            <><Sparkles className="w-4 h-4 mr-2" /> Generate Cartoon Avatar from Photo</>
+          )}
+        </Button>
+      )}
+
+      {/* Mouth Y offset */}
       {actor.imageUrl && (
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">
