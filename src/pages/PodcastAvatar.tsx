@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen, Captions, Settings, Sparkles, Loader2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
@@ -15,11 +15,12 @@ import AudioWaveform from "@/components/podcast/AudioWaveform";
 import TimelineEditor from "@/components/podcast/TimelineEditor";
 import ActorPresets from "@/components/podcast/ActorPresets";
 import BackgroundGenerator from "@/components/podcast/BackgroundGenerator";
+import EpisodeTemplates, { EpisodeTemplate } from "@/components/podcast/EpisodeTemplates";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
 import { smartAutoFill, buildTimelineFromTranscription } from "@/components/podcast/audioAnalysis";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Actor, ActorPreset, TimelineSegment, TranscriptionResult, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
+  Actor, ActorPreset, TimelineSegment, TranscriptionResult, TranscriptionWord, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
 const RESOLUTION_PRESETS = [
