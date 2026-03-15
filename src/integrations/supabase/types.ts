@@ -71,6 +71,42 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_templates: {
+        Row: {
+          actors: Json
+          created_at: string
+          description: string
+          emoji: string
+          id: string
+          music_preset: string
+          music_volume: number
+          name: string
+          scene_id: string
+        }
+        Insert: {
+          actors: Json
+          created_at?: string
+          description?: string
+          emoji?: string
+          id?: string
+          music_preset?: string
+          music_volume?: number
+          name: string
+          scene_id?: string
+        }
+        Update: {
+          actors?: Json
+          created_at?: string
+          description?: string
+          emoji?: string
+          id?: string
+          music_preset?: string
+          music_volume?: number
+          name?: string
+          scene_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
