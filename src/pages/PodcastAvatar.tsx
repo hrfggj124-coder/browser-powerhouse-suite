@@ -49,6 +49,7 @@ const PodcastAvatar = () => {
   const [showWaveform, setShowWaveform] = useState(true);
   const [showCaptions, setShowCaptions] = useState(true);
   const [captionText, setCaptionText] = useState("");
+  const [captionHighlight, setCaptionHighlight] = useState<{ actorName: string; words: { text: string; active: boolean }[] } | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
