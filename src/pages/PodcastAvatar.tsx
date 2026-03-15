@@ -1058,7 +1058,12 @@ const PodcastAvatar = () => {
           </div>
 
           {/* Episode Templates */}
-          <EpisodeTemplates onApplyTemplate={applyTemplate} />
+          <EpisodeTemplates
+            onApplyTemplate={applyTemplate}
+            currentActors={actors}
+            currentSceneId={selectedScene}
+            currentMusicVolume={musicVolume}
+          />
 
           {/* Actor Presets */}
           <ActorPresets onApplyPreset={applyPreset} actorCount={actors.length} />
