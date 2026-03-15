@@ -370,7 +370,9 @@ const PodcastAvatar = () => {
     setActiveActor(actorIdx);
 
     if (showCaptions) {
-      setCaptionText(getCaptionForTime(elapsed));
+      const highlight = getWordHighlightCaption(elapsed);
+      setCaptionText(highlight ? `${highlight.actorName}: "${highlight.words.map(w => w.text).join(" ")}"` : "");
+      setCaptionHighlight(highlight);
     }
 
     canvasRefs.current.forEach((canvas, i) => {
