@@ -60,6 +60,7 @@ const PodcastAvatar = () => {
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
   const [exportResolution, setExportResolution] = useState("720p");
+  const [exportFormat, setExportFormat] = useState<"webm" | "mp4">("mp4");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState<TranscriptionResult | null>(null);
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
