@@ -312,24 +312,46 @@ const PodcastAvatar = () => {
     return Math.floor(elapsedSec / 4) % actors.length;
   }, [timelineSegments, actors.length]);
 
-  // Get caption text - prefer transcript, fall back to speech bubble
-  const getCaptionForTime = useCallback((elapsedSec: number): string => {
-    if (timelineSegments.length === 0) return "";
+  // Get word-by-word caption with highlighting for current time
+  const getWordHighlightCaption = useCallback((elapsedSec: number): { actorName: string; words: { text: string; active: boolean }[] } | null => {
+    if (timelineSegments.length === 0) return null;
     const seg = timelineSegments.find(
       (s) => elapsedSec >= s.startTime && elapsedSec < s.endTime
     );
-    if (!seg) return "";
+    if (!seg) return null;
     const actor = actors[seg.actorIndex % actors.length];
-    if (!actor) return "";
+    if (!actor) return null;
 
-    // Use real transcript if available
-    if (seg.transcript) {
-      return `${actor.name}: "${seg.transcript}"`;
+    // Use transcription word timestamps for highlighting
+    if (transcription?.words && seg.transcript) {
+      const segWords = transcription.words.filter(
+        (w) => w.start >= seg.startTime && w.end <= seg.endTime
+      );
+      if (segWords.length > 0) {
+        return {
+          actorName: actor.name,
+          words: segWords.map((w) => ({
+            text: w.text,
+            active: elapsedSec >= w.start && elapsedSec < w.end,
+          })),
+        };
+      }
     }
-    return actor.speechBubble
-      ? `${actor.name}: "${actor.speechBubble}"`
-      : `${actor.name} is speaking...`;
-  }, [timelineSegments, actors]);
+
+    // Fallback: show full transcript or speech bubble
+    const text = seg.transcript || actor.speechBubble || `${actor.name} is speaking...`;
+    return {
+      actorName: actor.name,
+      words: text.split(" ").map((w) => ({ text: w, active: false })),
+    };
+  }, [timelineSegments, actors, transcription]);
+
+  // Simple text caption for export canvas rendering
+  const getCaptionForTime = useCallback((elapsedSec: number): string => {
+    const highlight = getWordHighlightCaption(elapsedSec);
+    if (!highlight) return "";
+    return `${highlight.actorName}: "${highlight.words.map(w => w.text).join(" ")}"`;
+  }, [getWordHighlightCaption]);
 
   const animate = useCallback(() => {
     if (!analyserRef.current) return;
