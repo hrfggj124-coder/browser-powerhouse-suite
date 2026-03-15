@@ -500,12 +500,17 @@ const PodcastAvatar = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [isPlaying, isRecording, audioFile, isExporting]);
 
-  const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string) => {
+  const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string, elapsed?: number) => {
     if (!text) return;
     const fontSize = Math.max(14, Math.floor(canvasWidth / 45));
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-    const textMetrics = ctx.measureText(text);
     const padding = 12;
+
+    // Get word highlight data if available
+    const highlight = elapsed !== undefined ? getWordHighlightCaption(elapsed) : null;
+    const displayText = highlight ? `${highlight.actorName}: ${highlight.words.map(w => w.text).join(" ")}` : text;
+
+    const textMetrics = ctx.measureText(displayText);
     const bgWidth = Math.min(textMetrics.width + padding * 2, canvasWidth - 20);
     const bgHeight = fontSize + padding * 2;
     const bgX = (canvasWidth - bgWidth) / 2;
@@ -516,10 +521,31 @@ const PodcastAvatar = () => {
     ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 8);
     ctx.fill();
 
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, canvasWidth / 2, bgY + bgHeight / 2, bgWidth - padding * 2);
+    if (highlight) {
+      // Draw word-by-word with highlighting
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const prefix = `${highlight.actorName}: `;
+      let x = bgX + padding;
+      const y = bgY + bgHeight / 2;
+
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fillText(prefix, x, y);
+      x += ctx.measureText(prefix).width;
+
+      for (const w of highlight.words) {
+        ctx.fillStyle = w.active ? "#a78bfa" : "#ffffff";
+        if (w.active) ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        else ctx.font = `${fontSize}px Inter, sans-serif`;
+        ctx.fillText(w.text + " ", x, y);
+        x += ctx.measureText(w.text + " ").width;
+      }
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(displayText, canvasWidth / 2, bgY + bgHeight / 2, bgWidth - padding * 2);
+    }
   };
 
   const exportVideo = async () => {
