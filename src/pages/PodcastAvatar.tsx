@@ -1143,11 +1143,21 @@ const PodcastAvatar = () => {
                 />
               )}
 
-              {/* Live captions overlay */}
-              {showCaptions && captionText && isPlaying && (
+              {/* Live captions overlay with word-by-word highlighting */}
+              {showCaptions && isPlaying && captionHighlight && (
                 <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
                   <div className="bg-black/75 text-white px-4 py-2 rounded-lg text-sm font-medium max-w-[80%] text-center">
-                    {captionText}
+                    <span className="text-white/60 mr-1">{captionHighlight.actorName}:</span>
+                    {captionHighlight.words.map((w, i) => (
+                      <span
+                        key={i}
+                        className={`transition-colors duration-100 ${
+                          w.active ? "text-primary font-bold" : "text-white"
+                        }`}
+                      >
+                        {w.text}{i < captionHighlight.words.length - 1 ? " " : ""}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
