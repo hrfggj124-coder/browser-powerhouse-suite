@@ -1340,6 +1340,15 @@ const PodcastAvatar = () => {
                 <Download className="w-4 h-4 mr-2" /> Download Audio
               </Button>
               <div className="flex items-center gap-2">
+                <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as "webm" | "mp4")}>
+                  <SelectTrigger className="w-20 h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mp4">MP4</SelectItem>
+                    <SelectItem value="webm">WebM</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={exportResolution} onValueChange={setExportResolution}>
                   <SelectTrigger className="w-24 h-9">
                     <SelectValue />
@@ -1353,7 +1362,7 @@ const PodcastAvatar = () => {
                   </SelectContent>
                 </Select>
                 <Button variant="outline" onClick={exportVideo} disabled={!audioFile || isExporting}>
-                  <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : "Export Video (.webm)"}
+                  <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : `Export ${exportFormat.toUpperCase()}`}
                 </Button>
               </div>
             </div>
