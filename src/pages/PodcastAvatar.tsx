@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Users, Play, Pause, Mic, Square, Circle, Download, Music, Plus, Trash2, GripVertical, Save, FolderOpen, Captions, Settings, Sparkles, Loader2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
@@ -15,11 +15,12 @@ import AudioWaveform from "@/components/podcast/AudioWaveform";
 import TimelineEditor from "@/components/podcast/TimelineEditor";
 import ActorPresets from "@/components/podcast/ActorPresets";
 import BackgroundGenerator from "@/components/podcast/BackgroundGenerator";
+import EpisodeTemplates, { EpisodeTemplate } from "@/components/podcast/EpisodeTemplates";
 import { drawAvatar } from "@/components/podcast/drawAvatar";
 import { smartAutoFill, buildTimelineFromTranscription } from "@/components/podcast/audioAnalysis";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Actor, ActorPreset, TimelineSegment, TranscriptionResult, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
+  Actor, ActorPreset, TimelineSegment, TranscriptionResult, TranscriptionWord, BACKGROUND_SCENES, defaultActors, AVATAR_SIZE, MOUTH_STATES,
 } from "@/components/podcast/types";
 
 const RESOLUTION_PRESETS = [
@@ -48,6 +49,7 @@ const PodcastAvatar = () => {
   const [showWaveform, setShowWaveform] = useState(true);
   const [showCaptions, setShowCaptions] = useState(true);
   const [captionText, setCaptionText] = useState("");
+  const [captionHighlight, setCaptionHighlight] = useState<{ actorName: string; words: { text: string; active: boolean }[] } | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -311,24 +313,46 @@ const PodcastAvatar = () => {
     return Math.floor(elapsedSec / 4) % actors.length;
   }, [timelineSegments, actors.length]);
 
-  // Get caption text - prefer transcript, fall back to speech bubble
-  const getCaptionForTime = useCallback((elapsedSec: number): string => {
-    if (timelineSegments.length === 0) return "";
+  // Get word-by-word caption with highlighting for current time
+  const getWordHighlightCaption = useCallback((elapsedSec: number): { actorName: string; words: { text: string; active: boolean }[] } | null => {
+    if (timelineSegments.length === 0) return null;
     const seg = timelineSegments.find(
       (s) => elapsedSec >= s.startTime && elapsedSec < s.endTime
     );
-    if (!seg) return "";
+    if (!seg) return null;
     const actor = actors[seg.actorIndex % actors.length];
-    if (!actor) return "";
+    if (!actor) return null;
 
-    // Use real transcript if available
-    if (seg.transcript) {
-      return `${actor.name}: "${seg.transcript}"`;
+    // Use transcription word timestamps for highlighting
+    if (transcription?.words && seg.transcript) {
+      const segWords = transcription.words.filter(
+        (w) => w.start >= seg.startTime && w.end <= seg.endTime
+      );
+      if (segWords.length > 0) {
+        return {
+          actorName: actor.name,
+          words: segWords.map((w) => ({
+            text: w.text,
+            active: elapsedSec >= w.start && elapsedSec < w.end,
+          })),
+        };
+      }
     }
-    return actor.speechBubble
-      ? `${actor.name}: "${actor.speechBubble}"`
-      : `${actor.name} is speaking...`;
-  }, [timelineSegments, actors]);
+
+    // Fallback: show full transcript or speech bubble
+    const text = seg.transcript || actor.speechBubble || `${actor.name} is speaking...`;
+    return {
+      actorName: actor.name,
+      words: text.split(" ").map((w) => ({ text: w, active: false })),
+    };
+  }, [timelineSegments, actors, transcription]);
+
+  // Simple text caption for export canvas rendering
+  const getCaptionForTime = useCallback((elapsedSec: number): string => {
+    const highlight = getWordHighlightCaption(elapsedSec);
+    if (!highlight) return "";
+    return `${highlight.actorName}: "${highlight.words.map(w => w.text).join(" ")}"`;
+  }, [getWordHighlightCaption]);
 
   const animate = useCallback(() => {
     if (!analyserRef.current) return;
@@ -347,7 +371,9 @@ const PodcastAvatar = () => {
     setActiveActor(actorIdx);
 
     if (showCaptions) {
-      setCaptionText(getCaptionForTime(elapsed));
+      const highlight = getWordHighlightCaption(elapsed);
+      setCaptionText(highlight ? `${highlight.actorName}: "${highlight.words.map(w => w.text).join(" ")}"` : "");
+      setCaptionHighlight(highlight);
     }
 
     canvasRefs.current.forEach((canvas, i) => {
@@ -365,6 +391,7 @@ const PodcastAvatar = () => {
     setIsPlaying(false);
     setCurrentTime(0);
     setCaptionText("");
+    setCaptionHighlight(null);
     cancelAnimationFrame(animFrameRef.current);
     setMouthOpen(0);
     try { musicSourceRef.current?.stop(); } catch { /* already stopped */ }
@@ -372,6 +399,22 @@ const PodcastAvatar = () => {
     canvasRefs.current.forEach((canvas, i) => {
       if (canvas && actors[i]) drawAvatar(canvas, actors[i], 0, false);
     });
+  };
+
+  const applyTemplate = (template: EpisodeTemplate) => {
+    const newActors: Actor[] = template.actors.map((a, i) => ({
+      ...a,
+      id: String(Date.now() + i),
+      image: null,
+      imageUrl: null,
+    }));
+    setActors(newActors);
+    setSelectedScene(template.sceneId);
+    setCustomBackgroundUrl(null);
+    setMusicVolume(template.musicVolume);
+    setTimelineSegments([]);
+    setTranscription(null);
+    toast.success(`Applied "${template.name}" template! Upload audio to get started.`);
   };
 
   const playAudio = async () => {
@@ -457,12 +500,17 @@ const PodcastAvatar = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [isPlaying, isRecording, audioFile, isExporting]);
 
-  const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string) => {
+  const drawCaptions = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, text: string, elapsed?: number) => {
     if (!text) return;
     const fontSize = Math.max(14, Math.floor(canvasWidth / 45));
     ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-    const textMetrics = ctx.measureText(text);
     const padding = 12;
+
+    // Get word highlight data if available
+    const highlight = elapsed !== undefined ? getWordHighlightCaption(elapsed) : null;
+    const displayText = highlight ? `${highlight.actorName}: ${highlight.words.map(w => w.text).join(" ")}` : text;
+
+    const textMetrics = ctx.measureText(displayText);
     const bgWidth = Math.min(textMetrics.width + padding * 2, canvasWidth - 20);
     const bgHeight = fontSize + padding * 2;
     const bgX = (canvasWidth - bgWidth) / 2;
@@ -473,10 +521,31 @@ const PodcastAvatar = () => {
     ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 8);
     ctx.fill();
 
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, canvasWidth / 2, bgY + bgHeight / 2, bgWidth - padding * 2);
+    if (highlight) {
+      // Draw word-by-word with highlighting
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const prefix = `${highlight.actorName}: `;
+      let x = bgX + padding;
+      const y = bgY + bgHeight / 2;
+
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fillText(prefix, x, y);
+      x += ctx.measureText(prefix).width;
+
+      for (const w of highlight.words) {
+        ctx.fillStyle = w.active ? "#a78bfa" : "#ffffff";
+        if (w.active) ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        else ctx.font = `${fontSize}px Inter, sans-serif`;
+        ctx.fillText(w.text + " ", x, y);
+        x += ctx.measureText(w.text + " ").width;
+      }
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(displayText, canvasWidth / 2, bgY + bgHeight / 2, bgWidth - padding * 2);
+    }
   };
 
   const exportVideo = async () => {
@@ -614,10 +683,10 @@ const PodcastAvatar = () => {
           }
         }
 
-        // Captions
+        // Captions with word-by-word highlighting
         if (showCaptions) {
           const caption = getCaptionForTime(elapsed);
-          drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption);
+          drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption, elapsed);
         }
 
         requestAnimationFrame(drawFrame);
@@ -847,6 +916,9 @@ const PodcastAvatar = () => {
               </div>
             ))}
           </div>
+
+          {/* Episode Templates */}
+          <EpisodeTemplates onApplyTemplate={applyTemplate} />
 
           {/* Actor Presets */}
           <ActorPresets onApplyPreset={applyPreset} actorCount={actors.length} />
@@ -1097,11 +1169,21 @@ const PodcastAvatar = () => {
                 />
               )}
 
-              {/* Live captions overlay */}
-              {showCaptions && captionText && isPlaying && (
+              {/* Live captions overlay with word-by-word highlighting */}
+              {showCaptions && isPlaying && captionHighlight && (
                 <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
                   <div className="bg-black/75 text-white px-4 py-2 rounded-lg text-sm font-medium max-w-[80%] text-center">
-                    {captionText}
+                    <span className="text-white/60 mr-1">{captionHighlight.actorName}:</span>
+                    {captionHighlight.words.map((w, i) => (
+                      <span
+                        key={i}
+                        className={`transition-colors duration-100 ${
+                          w.active ? "text-primary font-bold" : "text-white"
+                        }`}
+                      >
+                        {w.text}{i < captionHighlight.words.length - 1 ? " " : ""}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
