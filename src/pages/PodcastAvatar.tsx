@@ -683,10 +683,10 @@ const PodcastAvatar = () => {
           }
         }
 
-        // Captions
+        // Captions with word-by-word highlighting
         if (showCaptions) {
           const caption = getCaptionForTime(elapsed);
-          drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption);
+          drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption, elapsed);
         }
 
         requestAnimationFrame(drawFrame);
