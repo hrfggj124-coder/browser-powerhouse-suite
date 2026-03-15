@@ -391,6 +391,7 @@ const PodcastAvatar = () => {
     setIsPlaying(false);
     setCurrentTime(0);
     setCaptionText("");
+    setCaptionHighlight(null);
     cancelAnimationFrame(animFrameRef.current);
     setMouthOpen(0);
     try { musicSourceRef.current?.stop(); } catch { /* already stopped */ }
@@ -398,6 +399,22 @@ const PodcastAvatar = () => {
     canvasRefs.current.forEach((canvas, i) => {
       if (canvas && actors[i]) drawAvatar(canvas, actors[i], 0, false);
     });
+  };
+
+  const applyTemplate = (template: EpisodeTemplate) => {
+    const newActors: Actor[] = template.actors.map((a, i) => ({
+      ...a,
+      id: String(Date.now() + i),
+      image: null,
+      imageUrl: null,
+    }));
+    setActors(newActors);
+    setSelectedScene(template.sceneId);
+    setCustomBackgroundUrl(null);
+    setMusicVolume(template.musicVolume);
+    setTimelineSegments([]);
+    setTranscription(null);
+    toast.success(`Applied "${template.name}" template! Upload audio to get started.`);
   };
 
   const playAudio = async () => {
