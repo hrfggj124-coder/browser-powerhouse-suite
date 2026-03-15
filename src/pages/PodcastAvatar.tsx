@@ -60,6 +60,7 @@ const PodcastAvatar = () => {
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string | null>(null);
   const [exportResolution, setExportResolution] = useState("720p");
+  const [exportFormat, setExportFormat] = useState<"webm" | "mp4">("mp4");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcription, setTranscription] = useState<TranscriptionResult | null>(null);
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
@@ -556,7 +557,7 @@ const PodcastAvatar = () => {
 
     setIsExporting(true);
     const res = RESOLUTION_PRESETS.find((r) => r.label === exportResolution) || RESOLUTION_PRESETS[1];
-    toast.info(`Exporting ${res.label} video... This may take a moment.`);
+    toast.info(`Exporting ${res.label} ${exportFormat.toUpperCase()} video...`);
 
     try {
       const exportCanvas = document.createElement("canvas");
@@ -564,51 +565,13 @@ const PodcastAvatar = () => {
       exportCanvas.height = res.height;
       const ctx = exportCanvas.getContext("2d")!;
 
-      const stream = exportCanvas.captureStream(30);
-
       const audioCtx = new AudioContext();
       const arrayBuffer = await audioFile.arrayBuffer();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       const source = audioCtx.createBufferSource();
       source.buffer = audioBuffer;
-      const dest = audioCtx.createMediaStreamDestination();
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
-      source.connect(analyser);
-      analyser.connect(dest);
-      analyser.connect(audioCtx.destination);
-
-      let musicSource2: AudioBufferSourceNode | null = null;
-      if (musicFile) {
-        const mb = await musicFile.arrayBuffer();
-        const mab = await audioCtx.decodeAudioData(mb);
-        musicSource2 = audioCtx.createBufferSource();
-        musicSource2.buffer = mab;
-        musicSource2.loop = true;
-        const g = audioCtx.createGain();
-        g.gain.value = musicVolume / 100;
-        musicSource2.connect(g);
-        g.connect(dest);
-      }
-
-      dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
-
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `podcast-avatar-${res.label}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-        audioCtx.close();
-        setIsExporting(false);
-        toast.success(`Video exported at ${res.label}!`);
-      };
 
       let bgImage: HTMLImageElement | null = null;
       if (customBackgroundUrl) {
@@ -622,20 +585,14 @@ const PodcastAvatar = () => {
       }
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      let running = true;
-      const exportStartTime = Date.now();
 
-      const drawFrame = () => {
-        if (!running) return;
-
+      const drawSingleFrame = (elapsed: number) => {
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         const normalized = Math.min(avg / 80, 1);
         const mouthVal = normalized * MOUTH_STATES.wide;
-        const elapsed = (Date.now() - exportStartTime) / 1000;
         const actorIdx = getActiveActorAtTime(elapsed);
 
-        // Background
         if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
           const imgRatio = bgImage.naturalWidth / bgImage.naturalHeight;
           const canvasRatio = exportCanvas.width / exportCanvas.height;
@@ -656,7 +613,6 @@ const PodcastAvatar = () => {
           ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
         }
 
-        // Draw actors
         const avatarScale = Math.min(1, exportCanvas.width / (actors.length * (AVATAR_SIZE + 40)));
         const scaledSize = Math.floor(AVATAR_SIZE * Math.max(0.6, avatarScale));
         const spacing = exportCanvas.width / (actors.length + 1);
@@ -673,7 +629,6 @@ const PodcastAvatar = () => {
           ctx.drawImage(tmpCanvas, x, actorY);
         });
 
-        // Waveform
         if (showWaveform) {
           const barWidth = exportCanvas.width / 64;
           for (let i = 0; i < 64; i++) {
@@ -683,25 +638,210 @@ const PodcastAvatar = () => {
           }
         }
 
-        // Captions with word-by-word highlighting
         if (showCaptions) {
           const caption = getCaptionForTime(elapsed);
           drawCaptions(ctx, exportCanvas.width, exportCanvas.height, caption, elapsed);
         }
-
-        requestAnimationFrame(drawFrame);
       };
 
-      recorder.start();
-      source.start();
-      musicSource2?.start();
-      drawFrame();
+      // MP4 export using WebCodecs + mp4-muxer
+      if (exportFormat === "mp4" && typeof VideoEncoder !== "undefined") {
+        const { Muxer, ArrayBufferTarget } = await import("mp4-muxer");
 
-      source.onended = () => {
-        running = false;
-        try { musicSource2?.stop(); } catch { /* ok */ }
-        setTimeout(() => recorder.stop(), 200);
-      };
+        const fps = 30;
+        const totalFrames = Math.ceil(audioBuffer.duration * fps);
+        const target = new ArrayBufferTarget();
+
+        const muxer = new Muxer({
+          target,
+          video: {
+            codec: "avc",
+            width: res.width,
+            height: res.height,
+          },
+          audio: {
+            codec: "aac",
+            numberOfChannels: audioBuffer.numberOfChannels,
+            sampleRate: audioBuffer.sampleRate,
+          },
+          fastStart: "in-memory",
+        });
+
+        // Encode audio
+        const audioEncoder = new AudioEncoder({
+          output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+          error: (e) => console.error("Audio encode error:", e),
+        });
+        audioEncoder.configure({
+          codec: "mp4a.40.2",
+          numberOfChannels: audioBuffer.numberOfChannels,
+          sampleRate: audioBuffer.sampleRate,
+          bitrate: 128000,
+        });
+
+        // Mix voice + music into interleaved float data
+        const totalSamples = audioBuffer.length;
+        const numChannels = audioBuffer.numberOfChannels;
+        const mixedData = new Float32Array(totalSamples * numChannels);
+
+        for (let ch = 0; ch < numChannels; ch++) {
+          const channelData = audioBuffer.getChannelData(ch);
+          for (let i = 0; i < totalSamples; i++) {
+            mixedData[i * numChannels + ch] = channelData[i];
+          }
+        }
+
+        // If music file, mix it in
+        if (musicFile) {
+          try {
+            const mBuf = await musicFile.arrayBuffer();
+            const musicBuf = await audioCtx.decodeAudioData(mBuf);
+            const vol = musicVolume / 100;
+            for (let ch = 0; ch < numChannels; ch++) {
+              const musicCh = musicBuf.getChannelData(ch % musicBuf.numberOfChannels);
+              for (let i = 0; i < totalSamples; i++) {
+                const mi = i % musicCh.length; // loop music
+                mixedData[i * numChannels + ch] += musicCh[mi] * vol;
+              }
+            }
+          } catch { /* skip music mix on error */ }
+        }
+
+        // Encode audio in chunks
+        const chunkSize = audioBuffer.sampleRate; // 1 second chunks
+        for (let offset = 0; offset < totalSamples; offset += chunkSize) {
+          const len = Math.min(chunkSize, totalSamples - offset);
+          const chunkData = new Float32Array(len * numChannels);
+          for (let i = 0; i < len * numChannels; i++) {
+            chunkData[i] = mixedData[(offset * numChannels) + i];
+          }
+          const audioData = new AudioData({
+            format: "f32-planar" as AudioSampleFormat,
+            sampleRate: audioBuffer.sampleRate,
+            numberOfFrames: len,
+            numberOfChannels: numChannels,
+            timestamp: (offset / audioBuffer.sampleRate) * 1_000_000,
+            data: (() => {
+              // Convert interleaved to planar
+              const planar = new Float32Array(len * numChannels);
+              for (let ch = 0; ch < numChannels; ch++) {
+                for (let i = 0; i < len; i++) {
+                  planar[ch * len + i] = chunkData[i * numChannels + ch];
+                }
+              }
+              return planar;
+            })(),
+          });
+          audioEncoder.encode(audioData);
+          audioData.close();
+        }
+
+        // Encode video frames
+        const videoEncoder = new VideoEncoder({
+          output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+          error: (e) => console.error("Video encode error:", e),
+        });
+        videoEncoder.configure({
+          codec: "avc1.640028",
+          width: res.width,
+          height: res.height,
+          bitrate: 4_000_000,
+          framerate: fps,
+        });
+
+        for (let i = 0; i < totalFrames; i++) {
+          const elapsed = i / fps;
+          drawSingleFrame(elapsed);
+
+          const frame = new VideoFrame(exportCanvas, {
+            timestamp: (i / fps) * 1_000_000,
+            duration: (1 / fps) * 1_000_000,
+          });
+          videoEncoder.encode(frame, { keyFrame: i % (fps * 2) === 0 });
+          frame.close();
+
+          // Yield to UI periodically
+          if (i % 30 === 0) {
+            await new Promise((r) => setTimeout(r, 0));
+          }
+        }
+
+        await videoEncoder.flush();
+        await audioEncoder.flush();
+        videoEncoder.close();
+        audioEncoder.close();
+        muxer.finalize();
+
+        const blob = new Blob([target.buffer], { type: "video/mp4" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `podcast-avatar-${res.label}.mp4`;
+        a.click();
+        URL.revokeObjectURL(url);
+        audioCtx.close();
+        setIsExporting(false);
+        toast.success(`MP4 video exported at ${res.label}!`);
+      } else {
+        // Fallback: WebM via MediaRecorder
+        const stream = exportCanvas.captureStream(30);
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(analyser);
+        analyser.connect(dest);
+        analyser.connect(audioCtx.destination);
+
+        let musicSource2: AudioBufferSourceNode | null = null;
+        if (musicFile) {
+          const mb = await musicFile.arrayBuffer();
+          const mab = await audioCtx.decodeAudioData(mb);
+          musicSource2 = audioCtx.createBufferSource();
+          musicSource2.buffer = mab;
+          musicSource2.loop = true;
+          const g = audioCtx.createGain();
+          g.gain.value = musicVolume / 100;
+          musicSource2.connect(g);
+          g.connect(dest);
+        }
+
+        dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
+        const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "video/webm" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `podcast-avatar-${res.label}.webm`;
+          a.click();
+          URL.revokeObjectURL(url);
+          audioCtx.close();
+          setIsExporting(false);
+          toast.success(`Video exported at ${res.label}!`);
+        };
+
+        let running = true;
+        const exportStartTime = Date.now();
+
+        const drawFrame = () => {
+          if (!running) return;
+          const elapsed = (Date.now() - exportStartTime) / 1000;
+          drawSingleFrame(elapsed);
+          requestAnimationFrame(drawFrame);
+        };
+
+        recorder.start();
+        source.start();
+        musicSource2?.start();
+        drawFrame();
+
+        source.onended = () => {
+          running = false;
+          try { musicSource2?.stop(); } catch { /* ok */ }
+          setTimeout(() => recorder.stop(), 200);
+        };
+      }
     } catch (err) {
       console.error(err);
       toast.error("Export failed");
@@ -918,7 +1058,12 @@ const PodcastAvatar = () => {
           </div>
 
           {/* Episode Templates */}
-          <EpisodeTemplates onApplyTemplate={applyTemplate} />
+          <EpisodeTemplates
+            onApplyTemplate={applyTemplate}
+            currentActors={actors}
+            currentSceneId={selectedScene}
+            currentMusicVolume={musicVolume}
+          />
 
           {/* Actor Presets */}
           <ActorPresets onApplyPreset={applyPreset} actorCount={actors.length} />
@@ -1195,6 +1340,15 @@ const PodcastAvatar = () => {
                 <Download className="w-4 h-4 mr-2" /> Download Audio
               </Button>
               <div className="flex items-center gap-2">
+                <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as "webm" | "mp4")}>
+                  <SelectTrigger className="w-20 h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mp4">MP4</SelectItem>
+                    <SelectItem value="webm">WebM</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={exportResolution} onValueChange={setExportResolution}>
                   <SelectTrigger className="w-24 h-9">
                     <SelectValue />
@@ -1208,7 +1362,7 @@ const PodcastAvatar = () => {
                   </SelectContent>
                 </Select>
                 <Button variant="outline" onClick={exportVideo} disabled={!audioFile || isExporting}>
-                  <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : "Export Video (.webm)"}
+                  <Download className="w-4 h-4 mr-2" /> {isExporting ? "Exporting..." : `Export ${exportFormat.toUpperCase()}`}
                 </Button>
               </div>
             </div>
